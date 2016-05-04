@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("fixproj")]
-[assembly: AssemblyCopyright("Copyright © Kit Cragin")]
+[assembly: AssemblyCopyright("Copyright (C) Kit Cragin")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]

@@ -3,7 +3,7 @@ using Plossum.CommandLine;
 
 namespace fixproj
 {
-    [CommandLineManager(ApplicationName = "Project Sanitizer")]
+    [CommandLineManager(ApplicationName = "fixproj")]
     [CommandLineOptionGroup("commands", Name = "Commands", Require = OptionGroupRequirement.None)]
     public class Options
     {
