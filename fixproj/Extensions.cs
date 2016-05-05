@@ -35,7 +35,7 @@ namespace fixproj
 
         public static void MakeEmpty(this XElement element)
         {
-            element.ReplaceAll(null);
+            element.ReplaceNodes(null);
         }
 
         public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)

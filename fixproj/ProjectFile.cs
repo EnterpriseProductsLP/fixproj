@@ -40,7 +40,10 @@ namespace fixproj
 
                     // make elements with no real content into empty ones
                     if (x.HasNoContent())
+                    {
+                        Record($"{nodeName}: removing all empty content from {originalCaseIncludeValue}");
                         x.MakeEmpty();
+                    }
 
                     // remove superfluous Code subtype
                     var st = x.Element(ns + "SubType");
@@ -60,7 +63,7 @@ namespace fixproj
                             if (nodeName != "Content")
                             {
                                 Record($"{nodeName}: changing to Content for {originalCaseIncludeValue}");
-                                x.Name = ns + "None";
+                                x.Name = ns + "Content";
                             }
                         }
                         else
