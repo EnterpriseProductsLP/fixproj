@@ -29,39 +29,52 @@ namespace fixproj
             var insertAt = groups.First().PreviousNode;
             groups.ForEach(x => x.Remove());
 
-            // fix up various junk that can happen. we have to do this before all other
+            // fix up various special cases before all other
             // processing because things could be in the wrong place, etc
             if (Options.FixContent)
-            {
                 groups.Elements().ForEach(x =>
                 {
                     var nodeName = x.Name.LocalName;
-                    var value = x.Attribute("Include").Value.ToLower();
+                    var originalCaseIncludeValue = x.Attribute("Include").Value;
+                    var lowerCaseIncludeValue = originalCaseIncludeValue.ToLower();
 
                     // remove superfluous Code subtype
                     var st = x.Element(ns + "SubType");
                     if (st != null && st.Value == "Code")
                     {
-                        Record("{0}: removed Code SubType from {1}", nodeName, value);
+                        Record($"{nodeName}: removed Code SubType from {originalCaseIncludeValue}");
                         st.Remove();
                     }
 
-                    // fix config files
-                    if (new[] { "packages.config", "app.config", "web.config" }.Contains(value))
+                    // fix specific config files wherever they may be located
+                    if (lowerCaseIncludeValue.EndsWithAnyOf("packages.config", "app.config", "web.config"))
                     {
+                        if (lowerCaseIncludeValue.EndsWith("web.config"))
+                        {
+                            // this is super critical. I have seen builds fail for weird reasons on a TFS
+                            // build server (but not a dev box) when web.config is <None>.
+                            if (nodeName != "Content")
+                            {
+                                Record($"{nodeName}: changing to Content for {originalCaseIncludeValue}");
+                                x.Name = ns + "None";
+                            }
+                        }
+                        else
                         if (nodeName != "None")
                         {
-                            Record("{0}: changing to None for {1}", nodeName, value);
+                            Record($"{nodeName}: changing to None for {originalCaseIncludeValue}");
                             x.Name = ns + "None";
                         }
 
+                        // these config files should never be copied
                         var n = x.Element(ns + "CopyToOutputDirectory");
                         if (n != null)
                         {
-                            Record("{0}: Removing CopyToOutputDirectory for {1}", nodeName, value);
+                            Record($"{nodeName}: Removing CopyToOutputDirectory for {originalCaseIncludeValue}");
                             n.Remove();
                         }
-                    }                           
+                    }
+
                     // fix copy issues
                     var node = x.Element(ns + "CopyToOutputDirectory");
                     if (node != null)
@@ -69,16 +82,15 @@ namespace fixproj
                         if (node.Value.Contains("Always"))
                         {
                             node.Value = "PreserveNewest";
-                            Record("{0}: Changing {1} to PreserveNewest instead of CopyAlways", x.Name.LocalName, x.Attribute("Include").Value);
+                            Record($"{x.Name.LocalName}: Changing {x.Attribute("Include").Value} to PreserveNewest instead of CopyAlways");
                         }
 
                         // conflicting statements: is it embedded or to be copied?
                         // we have to do this interactively, even if it is annoying
                         if (nodeName == "EmbeddedResource")
-                        {
                             for (;;)
                             {
-                                Console.WriteLine("EmbeddedResource {0} claims it also wants to be copied to the output folder.", value);
+                                Console.WriteLine("EmbeddedResource {0} claims it also wants to be copied to the output folder.", originalCaseIncludeValue);
                                 Console.WriteLine("Keep it an (E)mbeddedResource, change it to (C)ontent with PreserveNewest, or (S)kip?");
                                 switch (Console.ReadLine())
                                 {
@@ -95,20 +107,19 @@ namespace fixproj
                                         goto later;
                                 }
                             }
-                        }
                     }
 
-                    // make cshtml's that are not embedded or content into Content
+
 later:
-                    if (value.EndsWith(".cshtml") && nodeName != "Content" && nodeName != "EmbeddedResource")
-                    {
-                        Record("{0}: making {1} into Content", nodeName, value);
-                        x.Name = ns + "Content";
-                    }
+                    // make cshtml's that are not embedded or content into Content
+                    if (!lowerCaseIncludeValue.EndsWith(".cshtml") || nodeName == "Content" || nodeName == "EmbeddedResource")
+                        return;
+                    Record($"{nodeName}: making {lowerCaseIncludeValue} into Content");
+                    x.Name = ns + "Content";
                 });
-            }
 
             // put all of the items in buckets based on the type of the item
+            // TODO: don't use an anon type.. it's preventing refactoring to smaller methods
             var itemGroups = groups
                 .SelectMany(x => x.Elements())
                 .ToLookup(x => x.Name)
@@ -117,18 +128,17 @@ later:
                 .ToList();
 
             if (groups.Count != itemGroups.Count)
-            {
-                Record("Replacing {0} ItemGroup elements with {1}", groups.Count, itemGroups.Count);
-            }
+                Record($"Replacing {groups.Count} ItemGroup elements with {itemGroups.Count}");
 
             foreach (var itemGroup in itemGroups)
             {
                 var groupToAdd = new XElement(ns + "ItemGroup");
                 var dir = Path.GetDirectoryName(FileName) ?? ".";
 
-                // limitation for now, only does C# files recursively
                 if (!string.IsNullOrEmpty(Options.AddCompileFilesThatExistOnDisk))
                 {
+                    // this ain't very DRY. should fix...
+
                     if (itemGroup.GroupName == "Compile")
                     {
                         var exts = Options.AddCompileFilesThatExistOnDisk.Split(',');
@@ -137,14 +147,13 @@ later:
                         foreach (var a in actualShortFileNameToLong.Keys)
                         {
                             XElement e;
-                            if (lowerIncludeToElement.TryGetValue(a.ToLower(), out e))
-                            {
-                                if (e.Attribute("Include").Value != a)
-                                {
-                                    Record("{0} case mismatch between Include and file system name. Changing case \n  from Include value '{1}'\n    to file system name '{2}'", itemGroup.GroupName, e.Attribute("Include").Value, a);
-                                    e.Attribute("Include").Value = a;
-                                }
-                            }
+                            if (!lowerIncludeToElement.TryGetValue(a.ToLower(), out e))
+                                continue;
+                            if (e.Attribute("Include").Value == a)
+                                continue;
+
+                            Record($"{itemGroup.GroupName}: case mismatch between Include and file system name. Changing case \n  from Include value '{e.Attribute("Include").Value}'\n    to file system name '{a}'");
+                            e.Attribute("Include").Value = a;
                         }
 
                         var includes = new HashSet<string>(itemGroup.Items.Select(x => x.Attribute("Include").Value));
@@ -157,7 +166,7 @@ later:
                             // and then include them
                             .Select(kvp =>
                             {
-                                Record("{0}: added {1}", group.GroupName, kvp.Key);
+                                Record($"{group.GroupName}: added {kvp.Key}");
                                 return new XElement(ns + "Compile", new XAttribute("Include", kvp.Key));
                             });
 
@@ -171,18 +180,16 @@ later:
                         var exts = Options.AddEmbeddedResourceFilesThatExistOnDisk.Split(',');
                         var lowerIncludeToElement = itemGroup.Items.DistinctBy(x => x.Attribute("Include").Value.ToLower()).ToDictionary(x => x.Attribute("Include").Value.ToLower());
                         var actualShortFileNameToLong = exts.SelectMany(x => Directory.EnumerateFiles(dir, x, SearchOption.AllDirectories)).ToDictionary(x => x.Substring(dir.Length + 1));                        
-                        //var actualShortFileNameToLong = Directory.GetFiles(dir, Options.AddEmbeddedResourceFilesThatExistOnDisk, SearchOption.AllDirectories).ToDictionary(x => x.Substring(dir.Length + 1));
                         foreach (var a in actualShortFileNameToLong.Keys)
                         {                                            
                             XElement e;
-                            if (lowerIncludeToElement.TryGetValue(a.ToLower(), out e))
-                            {
-                                if (e.Attribute("Include").Value != a)
-                                {
-                                    Record("{0} case mismatch between Include and file system name. Changing case \n  from Include value '{1}'\n    to file system name '{2}'", itemGroup.GroupName, e.Attribute("Include").Value, a);
-                                    e.Attribute("Include").Value = a;
-                                }
-                            }
+                            if (!lowerIncludeToElement.TryGetValue(a.ToLower(), out e))
+                                continue;
+                            if (e.Attribute("Include").Value == a)
+                                continue;
+
+                            Record($"{itemGroup.GroupName} case mismatch between Include and file system name. Changing case \n  from Include value '{e.Attribute("Include").Value}'\n    to file system name '{a}'");
+                            e.Attribute("Include").Value = a;
                         }
 
                         var includes = new HashSet<string>(itemGroup.Items.Select(x => x.Attribute("Include").Value));
@@ -197,7 +204,7 @@ later:
                             // and then include them
                             .Select(kvp =>
                             {                                
-                                Record("{0}: added {1}", group.GroupName, kvp.Key);
+                                Record($"{group.GroupName}: added {kvp.Key}");
                                 return new XElement(ns + "EmbeddedResource", new XAttribute("Include", kvp.Key));
                             });
 
@@ -215,14 +222,13 @@ later:
                         foreach (var a in actualShortFileNameToLong.Keys)
                         {
                             XElement e;
-                            if (lowerIncludeToElement.TryGetValue(a.ToLower(), out e))
-                            {
-                                if (e.Attribute("Include").Value != a)
-                                {
-                                    Record("{0} case mismatch. Changing case \n  from {1}\n    to {2}", itemGroup.GroupName, e.Attribute("Include").Value, a);
-                                    e.Attribute("Include").Value = a;
-                                }
-                            }
+                            if (!lowerIncludeToElement.TryGetValue(a.ToLower(), out e))
+                                continue;
+                            if (e.Attribute("Include").Value == a)
+                                continue;
+
+                            Record($"{itemGroup.GroupName} case mismatch. Changing case \n  from {e.Attribute("Include").Value}\n    to {a}");
+                            e.Attribute("Include").Value = a;
                         }
 
                         var includes = new HashSet<string>(itemGroup.Items.Select(x => x.Attribute("Include").Value.ToLower()));
@@ -235,7 +241,7 @@ later:
                             // and then include them
                             .Select(kvp =>
                             {
-                                Record("{0}: added {1}", group.GroupName, kvp.Key);
+                                Record($"{group.GroupName}: added {kvp.Key}");
                                 return new XElement(ns + "Content", new XAttribute("Include", kvp.Key));
                             });
 
@@ -244,7 +250,6 @@ later:
                 }
 
                 if (Options.DeleteDuplicates)
-                {
                     itemGroup.Items
                         // operate on a copy since we will modify the original list
                         .ToList()
@@ -255,39 +260,32 @@ later:
                         {
                             // skip the first one, the rest are the actual duplicates
                             var dupesOfFirst = g.Skip(1).ToList();
-                            Record("{0}: removed {1} dupes of {2}", itemGroup.GroupName, dupesOfFirst.Count, dupesOfFirst.First().Attribute("Include").Value);
+                            Record($"{itemGroup.GroupName}: removed {dupesOfFirst.Count} dupes of {dupesOfFirst.First().Attribute("Include").Value}");
                             return dupesOfFirst;
                         })
                         // remove the ones we found from the original collection
                         .SelectMany(x => x)
                         .ForEach(x => itemGroup.Items.Remove(x));
-                }
 
                 if (Options.DeleteReferencesToNonExistentFiles)
-                {
                     if (!new[] { "WCFServiceReference", "WCFMetadata", "Reference", "ProjectReference", "Folder", "Service", "BootstrapperPackage" }.Contains(itemGroup.GroupName))
-                    {
                         itemGroup.Items
                             // operate on a copy since we will modify the original list
                             .ToList()
                             .Where(x => IsDeletable(x, dir))
                             .ForEach(x =>
-                            {                           
-                                Record("{0}: removed reference to {1} because it doesn't exist", itemGroup.GroupName, x.Attribute("Include").Value);   
+                            {
+                                Record($"{itemGroup.GroupName}: removed reference to {x.Attribute("Include").Value} because it doesn't exist");
                                 itemGroup.Items.Remove(x);
                             });
-                    }
-                }
 
                 if (Options.Sort)
-                {                    
+                {
                     groupToAdd.Add(itemGroup.Items.OrderBy(x => x.Attribute("Include").Value));
-                    Record("{0}: sorted", itemGroup.GroupName);
+                    Record($"{itemGroup.GroupName}: sorted");
                 }
                 else
-                {
                     groupToAdd.Add(itemGroup.Items);
-                }
 
                 // add the actual ItemGroup back to the project
                 insertAt.AddAfterSelf(groupToAdd);
@@ -366,10 +364,10 @@ later:
             }
         }
 
-        public void Record(string message, params object[] args)
+        public void Record(string message)
         {
-            Options.Output("  " + message, args);
-            Changes.Add(string.Format(message, args));
+            Options.Output("  " + message);
+            Changes.Add(message);
         }
 
         private static bool IsSpecialFile(string file)

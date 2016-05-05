@@ -52,11 +52,11 @@ namespace fixproj
         [CommandLineOption(Aliases = "fix", Name = "fixcontent", Description = "Fixes content nodes so they  don't copy, copy if newer, etc. correctly based on type", MinOccurs = 0, MaxOccurs = 1)]
         public bool FixContent { get; set; }
 
-        public void Output(string m, params object[] args)
+        public void Output(string m)
         {
             if (Verbose)
             {
-                Console.WriteLine(m, args);
+                Console.WriteLine(m);
             }
         }
     }

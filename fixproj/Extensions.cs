@@ -7,6 +7,11 @@ namespace fixproj
 {
     public static class Extensions
     {
+        public static bool EndsWithAnyOf(this string subject, params string[] suffixes)
+        {
+            return suffixes.Any(subject.EndsWith);
+        }
+
         public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
         {
             var seenKeys = new HashSet<TKey>();
