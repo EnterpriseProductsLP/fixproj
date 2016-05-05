@@ -32,6 +32,18 @@ namespace fixproj
             // fix up various special cases before all other
             // processing because things could be in the wrong place, etc
             if (Options.FixContent)
+            {
+                Changed.Root
+                    .ElementsByLocalName("PropertyGroup")
+                    .ForEach(x =>
+                    {
+                        // make elements with no real content into empty ones
+                        if (!x.HasNoContent())
+                            return;
+                        Record("Removing empty content from property.");
+                        x.MakeEmpty();
+                    });
+
                 groups.Elements().ForEach(x =>
                 {
                     var nodeName = x.Name.LocalName;
@@ -66,8 +78,7 @@ namespace fixproj
                                 x.Name = ns + "Content";
                             }
                         }
-                        else
-                        if (nodeName != "None")
+                        else if (nodeName != "None")
                         {
                             Record($"{nodeName}: changing to None for {originalCaseIncludeValue}");
                             x.Name = ns + "None";
@@ -117,13 +128,13 @@ namespace fixproj
                     }
 
 
-later:
+                    later:
                     // make cshtml's that are not embedded or content into Content
-                    if (!lowerCaseIncludeValue.EndsWith(".cshtml") || nodeName == "Content" || nodeName == "EmbeddedResource")
-                        return;
+                    if (!lowerCaseIncludeValue.EndsWith(".cshtml") || nodeName == "Content" || nodeName == "EmbeddedResource") return;
                     Record($"{nodeName}: making {lowerCaseIncludeValue} into Content");
                     x.Name = ns + "Content";
                 });
+            }
 
             // put all of the items in buckets based on the type of the item
             // TODO: don't use an anon type.. it's preventing refactoring to smaller methods
