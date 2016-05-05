@@ -38,6 +38,10 @@ namespace fixproj
                     var originalCaseIncludeValue = x.Attribute("Include").Value;
                     var lowerCaseIncludeValue = originalCaseIncludeValue.ToLower();
 
+                    // make elements with no real content into empty ones
+                    if (x.HasNoContent())
+                        x.MakeEmpty();
+
                     // remove superfluous Code subtype
                     var st = x.Element(ns + "SubType");
                     if (st != null && st.Value == "Code")

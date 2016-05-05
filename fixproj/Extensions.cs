@@ -28,6 +28,16 @@ namespace fixproj
             return element.Descendants().Where(x => x.Name.LocalName == localName);
         }
 
+        public static bool HasNoContent(this XElement element)
+        {
+            return string.IsNullOrWhiteSpace(element.Value) && !element.HasElements;
+        }
+
+        public static void MakeEmpty(this XElement element)
+        {
+            element.ReplaceAll(null);
+        }
+
         public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
         {
             foreach (var v in source)
