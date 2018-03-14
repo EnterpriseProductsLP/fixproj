@@ -68,7 +68,7 @@ namespace fixproj
                     Console.WriteLine("\nPreview: {0} files would have been changed given your criteria.", entries.Count);
                 }
 
-                return 0;
+                return entries.Count == 0 ? 0 : 1;
             }
             catch (Exception e)
             {
