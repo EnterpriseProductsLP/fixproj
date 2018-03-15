@@ -37,15 +37,30 @@ namespace fixproj
                     .Where(file => !file.Contains(@"\packages\"))
                     .ForEach(file =>
                     {
-                        Console.WriteLine("Processing: {0}", file);
+                        if (!options.Preview)
+                        {
+                            Console.WriteLine("Processing: {0}", file);
+                        }
+
                         var entry = new ProjectFile { Changed = XDocument.Load(file), FileName = file, Original = XDocument.Load(file), Options = options };
                         entry.Change();
                         if (XNode.DeepEquals(entry.Original, entry.Changed))
                         {
-                            Console.WriteLine("  NO CHANGES\n");
+                            if (!options.Preview)
+                            {
+                                Console.WriteLine("  NO CHANGES\n");
+                            }
+
                             return;
                         }
+
+                        if (options.Preview)
+                        {
+                            Console.WriteLine("Processing: {0}", file);
+                        }
+
                         Console.WriteLine("  {0} CHANGES\n", entry.Changes.Count);
+
                         entries.Add(entry);
                     });
 
