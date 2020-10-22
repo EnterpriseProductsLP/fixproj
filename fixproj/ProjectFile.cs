@@ -403,6 +403,13 @@ namespace fixproj
                 // these may not exist because sln was cleaned; don't remove them to be safe
                 return false;
             }
+
+            if (value.Contains("*"))
+            {
+                // skip wildcards
+                return false;
+            }
+
             var fullPath = Path.Combine(Directory.GetCurrentDirectory(), dir, value);
             return !File.Exists(fullPath);
         }
