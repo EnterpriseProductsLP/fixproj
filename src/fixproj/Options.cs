@@ -43,12 +43,6 @@ namespace fixproj
         [CommandLineOption(Aliases = "v", Name = "verbose", Description = "Verbose output", MinOccurs = 0, MaxOccurs = 1)]
         public bool Verbose { get; set; }
 
-        [CommandLineOption(Aliases = "rip", Name = "ripstylecop", Description = "Rips stylecop out.", MinOccurs = 0, MaxOccurs = 1)]
-        public bool Rip { get; set; }
-
-        [CommandLineOption(Aliases = "unrip", Name = "unripstylecop", Description = "Puts stylecop back in", MinOccurs = 0, MaxOccurs = 1)]
-        public bool Unrip { get; set; }
-
         [CommandLineOption(Aliases = "fix", Name = "fixcontent", Description = "Fixes content nodes so they  don't copy, copy if newer, etc. correctly based on type", MinOccurs = 0, MaxOccurs = 1)]
         public bool FixContent { get; set; }
 

@@ -32,13 +32,9 @@ Options include
                         be made without making them
     -recursive, -r      Search the target directory recursively
                         for project files that match the mask
-    -ripstylecop,
-    -rip                Rips stylecop out.
     -sort, -s           Sort nodes by Include attribute
     -target, -t         Directory containing the project file, or
                         the root directory to search when recursive
-    -unripstylecop,
-    -unrip              Puts stylecop back in
     -verbose, -v        Verbose output
 
 
