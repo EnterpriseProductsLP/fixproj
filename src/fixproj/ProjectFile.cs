@@ -286,7 +286,7 @@ namespace fixproj
                         .ForEach(x => itemGroup.Items.Remove(x));
 
                 if (Options.DeleteReferencesToNonExistentFiles)
-                    if (!new[] { "WCFServiceReference", "WCFMetadata", "Reference", "ProjectReference", "Folder", "Service", "BootstrapperPackage" }.Contains(itemGroup.GroupName))
+                    if (!new[] { "WCFServiceReference", "WCFMetadata", "Reference", "ProjectReference", "Folder", "Service", "BootstrapperPackage", "PackageReference" }.Contains(itemGroup.GroupName))
                         itemGroup.Items
                             // operate on a copy since we will modify the original list
                             .ToList()
@@ -329,6 +329,9 @@ namespace fixproj
             return SpecialFileEx.IsMatch(file);
         }
 
+        private bool IsValidPackageReferenceVersion(XElement element) =>
+            element.HasAttributes && element.Attribute("Version")?.Value.StartsWith("$(") == true;
+
         private bool IsDeletable(XElement x, string dir)
         {
             // get the value of the Include attribute, unencoding
@@ -345,8 +348,8 @@ namespace fixproj
                 // skip wildcards
                 return false;
             }
-
-            var fullPath = Path.Combine(Directory.GetCurrentDirectory(), dir, value);
+            
+             var fullPath = Path.Combine(Directory.GetCurrentDirectory(), dir, value);
             return !File.Exists(fullPath);
         }
 
