@@ -297,22 +297,6 @@ namespace fixproj
                                 itemGroup.Items.Remove(x);
                             });
 
-                // check if package reference contains a value the from Directory.Build.props file
-                // prevent this value to be hard coded 
-                if (itemGroup.GroupName.Equals("PackageReference"))
-                {
-                    var invalidReferences = itemGroup.Items.Where(x => !IsValidPackageReferenceVersion(x)).ToList();
-
-                    if (invalidReferences.Any())
-                    {
-                        invalidReferences.ForEach(reference =>
-                        {
-                            Record($"{itemGroup.GroupName}: package reference {reference?.Attribute("Include")?.Value} has hard coded package version {reference?.Attribute("Version")?.Value}");
-                            reference.Attribute("Version").Value = $"$({reference.Attribute("Include").Value.Replace(".", "")}Version)";
-                        });
-                    }
-                }
-
                 if (Options.Sort)
                 {
                     groupToAdd.Add(itemGroup.Items.OrderBy(x => x.Attribute("Include").Value));
