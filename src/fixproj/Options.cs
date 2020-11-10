@@ -1,5 +1,4 @@
-﻿using System;
-using Plossum.CommandLine;
+﻿using Plossum.CommandLine;
 
 namespace fixproj
 {
@@ -19,15 +18,6 @@ namespace fixproj
         [CommandLineOption(Aliases = "s", Name = "sort", Description = "Sort nodes by Include attribute", MinOccurs = 0, MaxOccurs = 1)]
         public bool Sort { get; set; }
 
-        [CommandLineOption(Aliases = "ac, a", Name = "add", Description = "Add references to files that exist on disk", MinOccurs = 0, MaxOccurs = 1)]
-        public string AddCompileFilesThatExistOnDisk { get; set; }
-
-        [CommandLineOption(Aliases = "ae", Name = "embed", Description = "Add references to files that exist on disk", MinOccurs = 0, MaxOccurs = 1)]
-        public string AddEmbeddedResourceFilesThatExistOnDisk { get; set; }
-
-        [CommandLineOption(Aliases = "act", Name = "content", Description = "Add references to files that exist on disk", MinOccurs = 0, MaxOccurs = 1)]
-        public string AddContentFilesThatExistOnDisk { get; set; }
-
         [CommandLineOption(Aliases = "dd", Name = "dedupe", Description = "Deduplicate nodes that have the same value for the Include attribute", MinOccurs = 0, MaxOccurs = 1)]
         public bool DeleteDuplicates { get; set; }
 
@@ -37,21 +27,10 @@ namespace fixproj
         [CommandLineOption(Aliases = "p", Name = "preview", Description = "Preview the changes that would be made without making them", MinOccurs = 0, MaxOccurs = 1)]
         public bool Preview { get; set; }
 
-        [CommandLineOption(Aliases = "b", Name = "backup", Description = "Create a backup. Yes, .BAK is back!", MinOccurs = 0, MaxOccurs = 1)]
-        public bool CreateBackup { get; set; }
-
         [CommandLineOption(Aliases = "v", Name = "verbose", Description = "Verbose output", MinOccurs = 0, MaxOccurs = 1)]
         public bool Verbose { get; set; }
 
         [CommandLineOption(Aliases = "fix", Name = "fixcontent", Description = "Fixes content nodes so they  don't copy, copy if newer, etc. correctly based on type", MinOccurs = 0, MaxOccurs = 1)]
         public bool FixContent { get; set; }
-
-        public void Output(string m)
-        {
-            if (Verbose)
-            {
-                Console.WriteLine(m);
-            }
-        }
     }
 }
