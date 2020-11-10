@@ -13,15 +13,16 @@ namespace fixproj
 
         public static int Main(string[] args)
         {
+            ServiceProvider serviceProvider = null;
             try
             {
                 new CommandLineParser(Options).Parse();
 
-                var collection = new ServiceCollection()
+                serviceProvider = new ServiceCollection()
                     .AddSingleton<IProcess, ProcessFiles>(x => new ProcessFiles(Options))
                     .BuildServiceProvider();
 
-                return collection.GetService<IProcess>().Run();
+                return serviceProvider.GetService<IProcess>().Run();
             }
             catch (Exception e)
             {
@@ -34,7 +35,13 @@ namespace fixproj
                 {
                     Console.ReadLine();
                 }
+
+                if (serviceProvider is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
             }
         }
+
     }
 }

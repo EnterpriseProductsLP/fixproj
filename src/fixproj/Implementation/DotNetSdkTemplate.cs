@@ -8,6 +8,9 @@ namespace fixproj.Implementation
 {
     public class DotNetSdkTemplate : BaseTemplate, IOperateOnProjectFiles
     {
+        private readonly List<string> _listOfAllowedActions = new List<string> { Constants.Reference, Constants.ProjectReference, Constants.Folder, Constants.PackageReference, 
+                                                                                    Constants.NoneNode, Constants.CompileNode, Constants.ContentNode };
+
         public IList<string> Changes { get; }
 
         public XDocument ModifiedDocument { get; }
@@ -29,6 +32,19 @@ namespace fixproj.Implementation
         {
             ItemGroupElements.ForEach(x => x.Remove());
             FixPropertyGroups(ModifiedDocument.Root, Changes);
+
+            //exclude elements which contain EmbeddedResource local name, its attribute contains .resx extension, and they are part of this project
+            //by default, the new sdk will pick up default globbing pattern <EmbeddedResource Include="**\*.resx" />
+            ItemGroupElements.Elements()
+                .Where(element => element.Name.LocalName.Equals(Constants.EmbeddedResourceNode)
+                                  && element.HasAttributes && !string.IsNullOrWhiteSpace(element.IfAttributesContainExtension(".resx")))
+                .Remove();
+
+            // exclude elements which contain Compile local name and its attribute is Include
+            // By default, the new SDK will pick up default globbing patterns <Compile Include="**\*.cs" />
+            ItemGroupElements.Elements().Where(element => element.Name.LocalName.Equals(Constants.CompileNode) &&
+                                                          element.HasAttributes && !string.IsNullOrWhiteSpace(element.AttributeValueByName(Constants.IncludeAttribute)))
+                .Remove();
 
             // exclude elements which contain None local name and Remove attribute
             // these elements will be populated only if csproj file contains EmbeddedResources
@@ -73,9 +89,20 @@ namespace fixproj.Implementation
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            var attributeName = entity.LocalName.Equals(Constants.NoneNode)
-                ? Constants.RemoveAttribute
-                : Constants.IncludeAttribute;
+            var attributeName = Constants.IncludeAttribute;
+
+            if (entity.LocalName.Equals(Constants.CompileNode))
+            {
+                attributeName = Constants.RemoveAttribute;
+            }
+
+            // additional check for None local name because it can contain either Remove or Include attribute
+            // <None Include="..\SharedAppSettings.config" Link="SharedAppSettings.config">
+            // <None Remove="InvoicePdfDomain\Reports\InvoiceTemplate-AccountsPayable.rdlc" />
+            if (entity.LocalName.Equals(Constants.NoneNode))
+            {
+                attributeName = entity.Element.Select(x => x.FirstAttribute).FirstOrDefault()?.Name.LocalName;
+            }
 
             DeleteDuplicatesBasedOnAttribute(entity, Changes, x => x.AttributeValueByName(attributeName));
         }
@@ -83,16 +110,14 @@ namespace fixproj.Implementation
         /// <inheritdoc />
         public void DeleteReferencesToNonExistentFiles(ItemGroupEntity entity)
         {
-            //exclude elements which contain EmbeddedResource local name, its attribute contains .resx extension, and they are part of this project
-            //by default, the new sdk will pick up default globbing pattern <EmbeddedResource Include="**\*.resx" />
-            ItemGroupElements.Elements()
-                .Where(element => element.Name.LocalName.Equals(Constants.EmbeddedResourceNode) 
-                                  && element.HasAttributes && !string.IsNullOrWhiteSpace(element.IfAttributesContainExtension(".resx")))
-                .ForEach(x => entity.Element.Remove(x));
-
-            // exclude elements which contain Compile local name
-            // By default, the new SDK will pick up default globbing patterns <Compile Include="**\*.cs" />
-            ItemGroupElements.Elements().Where(element => element.Name.LocalName.Equals(Constants.CompileNode)).ForEach(x => entity.Element.Remove(x));
+            if (!_listOfAllowedActions.Contains(entity.LocalName))
+                ItemGroupElements.Elements()
+                    .Where(x => x.Name.LocalName.Equals(entity.LocalName))
+                    .ForEach(x =>
+                    {
+                        Changes.Add($"{entity.LocalName}: removed to {x.AttributeValueByName(Constants.IncludeAttribute)} because it doesn't exist");
+                        entity.Element.Remove(x);
+                    });
         }
 
         /// <inheritdoc />

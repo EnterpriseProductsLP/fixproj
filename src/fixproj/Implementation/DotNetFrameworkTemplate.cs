@@ -10,7 +10,8 @@ namespace fixproj.Implementation
 {
     public class DotNetFrameworkTemplate : BaseTemplate, IOperateOnProjectFiles
     {
-        private readonly List<string> _listOfAllowedActions = new List<string>{ "WCFServiceReference", "WCFMetadata", "Reference", "ProjectReference", "Folder", "Service", "BootstrapperPackage", "PackageReference" };
+        private readonly List<string> _listOfAllowedActions = new List<string>{ Constants.WcfServiceReference, Constants.WcfMetadata, Constants.Reference, Constants.ProjectReference, 
+                                                                                    Constants.Folder, Constants.Service, Constants.BootstrapperPackage, Constants.PackageReference };
         private readonly XNamespace _ns = "http://schemas.microsoft.com/developer/msbuild/2003";
         private readonly string _filePath;
 
@@ -153,7 +154,7 @@ namespace fixproj.Implementation
         public void DeleteReferencesToNonExistentFiles(ItemGroupEntity entity)
         {
             if (!_listOfAllowedActions.Contains(entity.LocalName))
-                entity.Element
+                ItemGroupElements.Elements()
                     .Where(x => IsDeletable(x, Path.GetDirectoryName(_filePath) ?? "."))
                     .ForEach(x =>
                     {

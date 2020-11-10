@@ -9,6 +9,11 @@ namespace fixproj
     {
         private readonly string _projectTypeValue = "Microsoft.NET.Sdk";
 
+        /// <summary>
+        /// Creates instance of IOperateOnProjectFiles implementation.
+        /// </summary>
+        /// <param name="file">The path of the processed file.</param>
+        /// <returns></returns>
         internal IOperateOnProjectFiles Build(string file)
         {
             if (string.IsNullOrWhiteSpace(file))
