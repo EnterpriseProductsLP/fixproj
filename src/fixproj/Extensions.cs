@@ -58,5 +58,25 @@ namespace fixproj
 
             return element.Attribute(attributeName)?.Value;
         }
+
+        /// <summary>
+        /// Returns attribute name based on local name.
+        /// </summary>
+        /// <param name="localName">Local name.</param>
+        /// <returns>Attribute name.</returns>
+        internal static string GetAttributeName(this string localName)
+        {
+            if (string.IsNullOrWhiteSpace(localName))
+                return null;
+
+            var attributeName = Constants.IncludeAttribute;
+
+            if (localName.Equals(Constants.CompileNode))
+            {
+                attributeName = Constants.RemoveAttribute;
+            }
+
+            return attributeName;
+        }
     }
 }

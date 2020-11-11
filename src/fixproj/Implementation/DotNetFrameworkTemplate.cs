@@ -104,9 +104,6 @@ namespace fixproj.Implementation
         /// <inheritdoc />
         public void MergeAndSortItemGroups(ItemGroupEntity entity, bool sort) => MergeAndSortItemGroups(new XElement(_ns + Constants.ItemGroupNode), entity, sort);
 
-        /// <inheritdoc />
-        public void SortPropertyGroups() => Sort(ModifiedDocument);
-
         private void ProcessConfigFiles(XElement element, string originalCaseIncludeValue)
         {
             if(!originalCaseIncludeValue.ToLower(CultureInfo.InvariantCulture).EndsWithAnyOf("packages.config", "app.config", "web.config"))

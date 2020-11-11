@@ -106,12 +106,7 @@ namespace fixproj.Implementation
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            var attributeName = Constants.IncludeAttribute;
-
-            if (entity.LocalName.Equals(Constants.CompileNode))
-            {
-                attributeName = Constants.RemoveAttribute;
-            }
+            var attributeName = entity.LocalName.GetAttributeName();
 
             // additional check for None local name because it can contain either Remove or Include attribute
             // <None Include="..\SharedAppSettings.config" Link="SharedAppSettings.config">
@@ -139,8 +134,5 @@ namespace fixproj.Implementation
 
         /// <inheritdoc />
         public void MergeAndSortItemGroups(ItemGroupEntity entity, bool sort) => MergeAndSortItemGroups(new XElement(Constants.ItemGroupNode), entity, sort);
-
-        /// <inheritdoc />
-        public void SortPropertyGroups() => Sort(ModifiedDocument);
     }
 }

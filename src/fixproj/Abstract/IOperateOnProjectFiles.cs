@@ -53,6 +53,30 @@ namespace fixproj.Abstract
         /// <summary>
         /// Sorts property nodes.
         /// </summary>
-        void SortPropertyGroups();
+        void SortPropertyGroups()
+        {
+            ModifiedDocument.Root.ElementsByLocalName(Constants.PropertyGroupNode).ForEach(e => Sort(e));
+
+            void Sort(XElement element, bool sortAttributes = true)
+            {
+                if (element == null)
+                    throw new ArgumentNullException(nameof(element));
+
+                if (sortAttributes)
+                {
+                    var atts = element.Attributes().OrderBy(a => a.ToString()).ToList();
+                    atts.RemoveAll(x => true);
+                    atts.ForEach(element.Add);
+                }
+
+                var sorted = element.Elements().OrderBy(e => e.Name.ToString()).ToList();
+                if (!element.HasElements)
+                    return;
+
+                element.RemoveNodes();
+                sorted.ForEach(c => Sort(c));
+                sorted.ForEach(element.Add);
+            }
+        }
     }
 }

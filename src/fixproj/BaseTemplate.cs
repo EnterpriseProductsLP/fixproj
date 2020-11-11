@@ -69,32 +69,6 @@ namespace fixproj
                 });
 
         /// <summary>
-        /// Sorts elements.
-        /// </summary>
-        /// <param name="element">XElement.</param>
-        /// <param name="sortAttributes">A flag indicating whether we need to sort the element.</param>
-        protected void Sort(XElement element, bool sortAttributes = true)
-        {
-            if (element == null)
-                throw new ArgumentNullException(nameof(element));
-
-            if (sortAttributes)
-            {
-                var atts = element.Attributes().OrderBy(a => a.ToString()).ToList();
-                atts.RemoveAll(x => true);
-                atts.ForEach(element.Add);
-            }
-
-            var sorted = element.Elements().OrderBy(e => e.Name.ToString()).ToList();
-            if (!element.HasElements)
-                return;
-
-            element.RemoveNodes();
-            sorted.ForEach(c => Sort(c));
-            sorted.ForEach(element.Add);
-        }
-
-        /// <summary>
         /// Deletes duplicated elements.
         /// </summary>
         /// <param name="entity">ItemGroupEntity.</param>
@@ -117,13 +91,6 @@ namespace fixproj
                 .ForEach(x => entity.Element.Remove(x));
 
         /// <summary>
-        /// Sorts property groups.
-        /// </summary>
-        /// <param name="modifiedDocument">XDocument.</param>
-        protected void Sort(XDocument modifiedDocument) =>
-            modifiedDocument.Root.ElementsByLocalName(Constants.PropertyGroupNode).ForEach(e => Sort(e));
-
-        /// <summary>
         /// Inserts elements into modified document.
         /// </summary>
         /// <param name="groupToAdd">XElement.</param>
@@ -134,9 +101,11 @@ namespace fixproj
             if(groupToAdd == null)
                 throw new ArgumentNullException(nameof(groupToAdd));
 
+            var attributeName = entity.LocalName.GetAttributeName();
+
             if (sort)
             {
-                groupToAdd.Add(entity.Element.OrderBy(x => x.AttributeValueByName(Constants.IncludeAttribute)));
+                groupToAdd.Add(entity.Element.OrderBy(x => x.AttributeValueByName(attributeName)));
             }
             else
             {

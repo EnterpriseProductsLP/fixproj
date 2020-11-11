@@ -13,7 +13,7 @@ namespace fixproj
         /// Creates instance of IOperateOnProjectFiles implementation.
         /// </summary>
         /// <param name="file">The path of the processed file.</param>
-        /// <returns></returns>
+        /// <returns>Instance of IOperateOnProjectFiles implementation.</returns>
         internal IOperateOnProjectFiles Build(string file)
         {
             if (string.IsNullOrWhiteSpace(file))
@@ -27,9 +27,7 @@ namespace fixproj
             var projectType = document.Root.Attribute("Sdk")?.Value;
 
             if (!string.IsNullOrWhiteSpace(projectType) && projectType.Equals(_projectTypeValue))
-            {
                 return new DotNetSdkTemplate(file);
-            }
 
             return new DotNetFrameworkTemplate(file);
         }
