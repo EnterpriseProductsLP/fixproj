@@ -13,21 +13,20 @@ namespace fixproj.Implementation
         private readonly List<string> _listOfAllowedActions = new List<string>{ Constants.WcfServiceReference, Constants.WcfMetadata, Constants.Reference, Constants.ProjectReference, 
                                                                                     Constants.Folder, Constants.Service, Constants.BootstrapperPackage, Constants.PackageReference };
         private readonly XNamespace _ns = "http://schemas.microsoft.com/developer/msbuild/2003";
-        private readonly string _filePath;
 
-        public IList<string> Changes { get; }
+        /// <inheritdoc />
+        public IList<string> Changes { get; } = new List<string>();
 
+        /// <inheritdoc />
         public XDocument ModifiedDocument { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DotNetFrameworkTemplate"/> class.
         /// </summary>
         /// <param name="file">The path of the processed file.</param>
-        public DotNetFrameworkTemplate(string file)
+        public DotNetFrameworkTemplate(string file) : base(file)
         {
-            _filePath = file;
             ModifiedDocument = XDocument.Load(file);
-            Changes = new List<string>();
 
             Initialize(ModifiedDocument);
         }
@@ -59,71 +58,17 @@ namespace fixproj.Implementation
                 }
 
                 // fix specific config files wherever they may be located
-                if (originalCaseIncludeValue.ToLower(CultureInfo.InvariantCulture).EndsWithAnyOf("packages.config", "app.config", "web.config"))
-                {
-                    if (originalCaseIncludeValue.ToLower(CultureInfo.InvariantCulture).EndsWith("web.config"))
-                    {
-                        // this is super critical. I have seen builds fail for weird reasons on a TFS
-                        // build server (but not a dev box) when web.config is <None>.
-                        if (element.Name.LocalName.Equals(Constants.ContentNode, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            Changes.Add($"{element.Name.LocalName}: changing to Content for {originalCaseIncludeValue}");
-                            element.Name = _ns + Constants.ContentNode;
-                        }
-                    }
-                    else if (element.Name.LocalName.Equals(Constants.NoneNode, StringComparison.InvariantCultureIgnoreCase) )
-                    {
-                        Changes.Add($"{element.Name.LocalName}: changing to None for {originalCaseIncludeValue}");
-                        element.Name = _ns + Constants.NoneNode;
-                    }
-
-                    // these config files should never be copied
-                    var n = element.Element(_ns + Constants.CopyToOutputDirectoryElement);
-                    if (n != null)
-                    {
-                        Changes.Add($"{element.Name.LocalName}: Removing CopyToOutputDirectory for {originalCaseIncludeValue}");
-                        n.Remove();
-                    }
-                }
+                ProcessConfigFiles(element, originalCaseIncludeValue);
 
                 // fix copy issues
-                var node = element.Element(_ns + Constants.CopyToOutputDirectoryElement);
-                if (node != null)
-                {
-                    if (node.Value.Contains(Constants.AlwaysNodeValue))
-                    {
-                        node.Value = Constants.PreserveNewestNodeValue;
-                        Changes.Add($"{element.Name.LocalName}: Changing {element.AttributeValueByName(Constants.IncludeAttribute)} to PreserveNewest instead of CopyAlways");
-                    }
+                FixCopyIssue(element.Element(_ns + Constants.CopyToOutputDirectoryElement), Changes);
 
-                    // conflicting statements: is it embedded or to be copied?
-                    // we have to do this interactively, even if it is annoying
-                    if (element.Name.LocalName == Constants.EmbeddedResourceNode)
-                        for (; ; )
-                        {
-                            Console.WriteLine("EmbeddedResource {0} claims it also wants to be copied to the output folder.", originalCaseIncludeValue);
-                            Console.WriteLine("Keep it an (E)mbeddedResource, change it to (C)ontent with PreserveNewest, or (S)kip?");
-                            switch (Console.ReadLine())
-                            {
-                                case "e":
-                                case "E":
-                                    node.Remove();
-                                    goto later;
-                                case "c":
-                                case "C":
-                                    node.Parent.Name = _ns + Constants.ContentNode;
-                                    goto later;
-                                case "s":
-                                case "S":
-                                    goto later;
-                            }
-                        }
-                }
-
-
-                later:
                 // make cshtml's that are not embedded or content into Content
-                if (!originalCaseIncludeValue.ToLower(CultureInfo.InvariantCulture).EndsWith(".cshtml") || element.Name.LocalName == Constants.ContentNode || element.Name.LocalName == Constants.EmbeddedResourceNode) return;
+                if (!originalCaseIncludeValue.ToLower(CultureInfo.InvariantCulture).EndsWith(".cshtml") 
+                    || element.Name.LocalName == Constants.ContentNode 
+                    || element.Name.LocalName == Constants.EmbeddedResourceNode) 
+                    return;
+
                 Changes.Add($"{element.Name.LocalName}: making {originalCaseIncludeValue.ToLower(CultureInfo.InvariantCulture)} into Content");
                 element.Name = _ns + Constants.ContentNode;
             });
@@ -138,24 +83,17 @@ namespace fixproj.Implementation
                     Element = new List<XElement>(x)
                 })
                 .ToList();
-
         }
 
         /// <inheritdoc />
-        public void DeleteDuplicates(ItemGroupEntity entity)
-        {
-            if(entity == null)
-                throw new ArgumentNullException(nameof(entity));
-
-            DeleteDuplicatesBasedOnAttribute(entity, Changes, x => x.AttributeValueByName(Constants.IncludeAttribute));
-        }
+        public void DeleteDuplicates(ItemGroupEntity entity) => DeleteDuplicatesBasedOnAttribute(entity, Changes, x => x.AttributeValueByName(Constants.IncludeAttribute));
 
         /// <inheritdoc />
         public void DeleteReferencesToNonExistentFiles(ItemGroupEntity entity)
         {
             if (!_listOfAllowedActions.Contains(entity.LocalName))
                 ItemGroupElements.Elements()
-                    .Where(x => IsDeletable(x, Path.GetDirectoryName(_filePath) ?? "."))
+                    .Where(x => IsDeletable(x, Path.GetDirectoryName(FilePath) ?? "."))
                     .ForEach(x =>
                     {
                         Changes.Add($"{entity.LocalName}: removed reference to {x.AttributeValueByName(Constants.IncludeAttribute)} because it doesn't exist");
@@ -164,26 +102,37 @@ namespace fixproj.Implementation
         }
 
         /// <inheritdoc />
-        public void MergeAndSortItemGroups(ItemGroupEntity entity, bool sort)
-        {
-            var groupToAdd = new XElement(_ns + Constants.ItemGroupNode);
-
-            if (sort)
-            {
-                groupToAdd.Add(entity.Element.OrderBy(x => x.AttributeValueByName(Constants.IncludeAttribute)));
-                Changes.Add($"{entity.LocalName}: sorted");
-            }
-            else
-            {
-                groupToAdd.Add(entity.Element);
-            }
-
-            InsertedAt.AddAfterSelf(groupToAdd);
-            InsertedAt = groupToAdd;
-        }
+        public void MergeAndSortItemGroups(ItemGroupEntity entity, bool sort) => MergeAndSortItemGroups(new XElement(_ns + Constants.ItemGroupNode), entity, sort);
 
         /// <inheritdoc />
         public void SortPropertyGroups() => Sort(ModifiedDocument);
+
+        private void ProcessConfigFiles(XElement element, string originalCaseIncludeValue)
+        {
+            if(!originalCaseIncludeValue.ToLower(CultureInfo.InvariantCulture).EndsWithAnyOf("packages.config", "app.config", "web.config"))
+                return;
+
+            if (originalCaseIncludeValue.ToLower(CultureInfo.InvariantCulture).EndsWith("web.config") &&
+                element.Name.LocalName.Equals(Constants.ContentNode, StringComparison.InvariantCultureIgnoreCase))
+            {
+                Changes.Add($"{element.Name.LocalName}: changing to Content for {originalCaseIncludeValue}");
+                element.Name = _ns + Constants.ContentNode;
+            }
+
+            if (element.Name.LocalName.Equals(Constants.NoneNode, StringComparison.InvariantCultureIgnoreCase))
+            {
+                Changes.Add($"{element.Name.LocalName}: changing to None for {originalCaseIncludeValue}");
+                element.Name = _ns + Constants.NoneNode;
+            }
+
+            // these config files should never be copied
+            var n = element.Element(_ns + Constants.CopyToOutputDirectoryElement);
+            if (n == null)
+                return;
+
+            Changes.Add($"{element.Name.LocalName}: Removing CopyToOutputDirectory for {originalCaseIncludeValue}");
+            n.Remove();
+        }
 
         private static bool IsDeletable(XElement x, string dir)
         {

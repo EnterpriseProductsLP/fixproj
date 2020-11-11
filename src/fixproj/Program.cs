@@ -11,6 +11,11 @@ namespace fixproj
     {
         private static readonly Options Options = new Options();
 
+        /// <summary>
+        /// Startup main method.
+        /// </summary>
+        /// <param name="args">A collection of input arguments.</param>
+        /// <returns>Integer.</returns>
         public static int Main(string[] args)
         {
             ServiceProvider serviceProvider = null;
@@ -42,6 +47,5 @@ namespace fixproj
                 }
             }
         }
-
     }
 }
