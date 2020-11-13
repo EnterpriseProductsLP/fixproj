@@ -11,7 +11,7 @@ namespace fixproj
     {
         public IList<string> Changes { get; } = new List<string>();
 
-        public Options Options { get; set; }
+        public CommandLineOptions CommandLineOptions { get; set; }
 
         public string FileName { get; set; }
 
@@ -31,7 +31,7 @@ namespace fixproj
 
             // fix up various special cases before all other
             // processing because things could be in the wrong place, etc
-            if (Options.FixContent)
+            if (CommandLineOptions.FixContent)
             {
                 Changed.Root
                     .ElementsByLocalName("PropertyGroup")
@@ -153,13 +153,13 @@ namespace fixproj
                 var groupToAdd = new XElement(ns + "ItemGroup");
                 var dir = Path.GetDirectoryName(FileName) ?? ".";
 
-                if (!string.IsNullOrEmpty(Options.AddCompileFilesThatExistOnDisk))
+                if (!string.IsNullOrEmpty(CommandLineOptions.AddCompileFilesThatExistOnDisk))
                 {
                     // this ain't very DRY. should fix...
 
                     if (itemGroup.GroupName == "Compile")
                     {
-                        var exts = Options.AddCompileFilesThatExistOnDisk.Split(',');
+                        var exts = CommandLineOptions.AddCompileFilesThatExistOnDisk.Split(',');
                         var lowerIncludeToElement = itemGroup.Items.DistinctBy(x => x.Attribute("Include").Value.ToLower()).ToDictionary(x => x.Attribute("Include").Value.ToLower());
                         var actualShortFileNameToLong = exts.SelectMany(x => Directory.EnumerateFiles(dir, x, SearchOption.AllDirectories)).ToDictionary(x => x.Substring(dir.Length + 1));                        
                         foreach (var a in actualShortFileNameToLong.Keys)
@@ -191,11 +191,11 @@ namespace fixproj
                         itemGroup.Items.AddRange(newReferences);
                     }
                 }                
-                if (!string.IsNullOrEmpty(Options.AddEmbeddedResourceFilesThatExistOnDisk))
+                if (!string.IsNullOrEmpty(CommandLineOptions.AddEmbeddedResourceFilesThatExistOnDisk))
                 {
                     if (itemGroup.GroupName == "EmbeddedResource")
                     {
-                        var exts = Options.AddEmbeddedResourceFilesThatExistOnDisk.Split(',');
+                        var exts = CommandLineOptions.AddEmbeddedResourceFilesThatExistOnDisk.Split(',');
                         var lowerIncludeToElement = itemGroup.Items.DistinctBy(x => x.Attribute("Include").Value.ToLower()).ToDictionary(x => x.Attribute("Include").Value.ToLower());
                         var actualShortFileNameToLong = exts.SelectMany(x => Directory.EnumerateFiles(dir, x, SearchOption.AllDirectories)).ToDictionary(x => x.Substring(dir.Length + 1));                        
                         foreach (var a in actualShortFileNameToLong.Keys)
@@ -230,11 +230,11 @@ namespace fixproj
                     }
                 }
 
-                if (!string.IsNullOrEmpty(Options.AddContentFilesThatExistOnDisk))
+                if (!string.IsNullOrEmpty(CommandLineOptions.AddContentFilesThatExistOnDisk))
                 {
                     if (itemGroup.GroupName == "Content")
                     {
-                        var exts = Options.AddContentFilesThatExistOnDisk.Split(',');
+                        var exts = CommandLineOptions.AddContentFilesThatExistOnDisk.Split(',');
                         var lowerIncludeToElement = itemGroup.Items.DistinctBy(x => x.Attribute("Include").Value.ToLower()).ToDictionary(x => x.Attribute("Include").Value.ToLower());
                         var actualShortFileNameToLong = exts.SelectMany(x => Directory.EnumerateFiles(dir, x, SearchOption.AllDirectories)).ToDictionary(x => x.Substring(dir.Length + 1));                        
                         foreach (var a in actualShortFileNameToLong.Keys)
@@ -267,7 +267,7 @@ namespace fixproj
                     }
                 }
 
-                if (Options.DeleteDuplicates)
+                if (CommandLineOptions.DeleteDuplicates)
                     itemGroup.Items
                         // operate on a copy since we will modify the original list
                         .ToList()
@@ -285,7 +285,7 @@ namespace fixproj
                         .SelectMany(x => x)
                         .ForEach(x => itemGroup.Items.Remove(x));
 
-                if (Options.DeleteReferencesToNonExistentFiles)
+                if (CommandLineOptions.DeleteReferencesToNonExistentFiles)
                     if (!new[] { "WCFServiceReference", "WCFMetadata", "Reference", "ProjectReference", "Folder", "Service", "BootstrapperPackage", "PackageReference" }.Contains(itemGroup.GroupName))
                         itemGroup.Items
                             // operate on a copy since we will modify the original list
@@ -297,7 +297,7 @@ namespace fixproj
                                 itemGroup.Items.Remove(x);
                             });
 
-                if (Options.Sort)
+                if (CommandLineOptions.Sort)
                 {
                     groupToAdd.Add(itemGroup.Items.OrderBy(x => x.Attribute("Include").Value));
                     Record($"{itemGroup.GroupName}: sorted");
@@ -310,7 +310,7 @@ namespace fixproj
                 insertAt = groupToAdd;
             }
 
-            if (Options.Sort)
+            if (CommandLineOptions.Sort)
             {
                 Changed.Root
                     .ElementsByLocalName("PropertyGroup")
@@ -320,7 +320,7 @@ namespace fixproj
 
         public void Record(string message)
         {
-            Options.Output("  " + message);
+            CommandLineOptions.Output("  " + message);
             Changes.Add(message);
         }
 

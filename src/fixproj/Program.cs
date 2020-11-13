@@ -16,8 +16,8 @@ namespace fixproj
         {
             try
             {
-                var options = new Options();
-                var parser = new CommandLineParser(options);
+                var commandLineOptions = new CommandLineOptions();
+                var parser = new CommandLineParser(commandLineOptions);
                 parser.Parse();
                 if (parser.HasErrors)
                 {
@@ -25,7 +25,7 @@ namespace fixproj
                     return 1;
                 }
 
-                if (options.Preview)
+                if (commandLineOptions.Preview)
                 {
                     Console.WriteLine("*** PREVIEW ONLY! DON'T PANIC!\n");
                 }
@@ -33,20 +33,20 @@ namespace fixproj
                 var entries = new List<ProjectFile>();
 
                 Directory
-                    .GetFiles(options.TargetDirectory, options.FileMask, options.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                    .GetFiles(commandLineOptions.TargetDirectory, commandLineOptions.FileMask, commandLineOptions.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
                     .Where(file => !file.Contains(@"\packages\"))
                     .ForEach(file =>
                     {
-                        if (!options.Preview)
+                        if (!commandLineOptions.Preview)
                         {
                             Console.WriteLine("Processing: {0}", file);
                         }
 
-                        var entry = new ProjectFile { Changed = XDocument.Load(file), FileName = file, Original = XDocument.Load(file), Options = options };
+                        var entry = new ProjectFile { Changed = XDocument.Load(file), FileName = file, Original = XDocument.Load(file), CommandLineOptions = commandLineOptions };
                         entry.Change();
                         if (XNode.DeepEquals(entry.Original, entry.Changed))
                         {
-                            if (!options.Preview)
+                            if (!commandLineOptions.Preview)
                             {
                                 Console.WriteLine("  NO CHANGES\n");
                             }
@@ -54,7 +54,7 @@ namespace fixproj
                             return;
                         }
 
-                        if (options.Preview)
+                        if (commandLineOptions.Preview)
                         {
                             Console.WriteLine("Processing: {0}", file);
                         }
@@ -64,12 +64,12 @@ namespace fixproj
                         entries.Add(entry);
                     });
 
-                if (!options.Preview)
+                if (!commandLineOptions.Preview)
                 {
                     Console.WriteLine("\nSaving {0} sanitized files.", entries.Count);
                     foreach (var e in entries)
                     {
-                        if (options.CreateBackup)
+                        if (commandLineOptions.CreateBackup)
                         {
                             e.Original.Save(e.FileName + ".bak");
                         }
