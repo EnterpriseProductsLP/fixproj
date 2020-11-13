@@ -6,13 +6,13 @@ namespace FixProjects
     public class ItemGroupEntity
     {
         /// <summary>
-        /// Represents local name.
-        /// </summary>
-        public string LocalName { get; set; }
-
-        /// <summary>
-        /// Represents a collection of node elements.
+        ///     Gets or sets the collection of node elements.
         /// </summary>
         public List<XElement> Element { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the local name.
+        /// </summary>
+        public string LocalName { get; set; }
     }
 }

@@ -12,7 +12,7 @@ namespace FixProjects
         private static readonly CommandLineOptions CommandLineOptions = new CommandLineOptions();
 
         /// <summary>
-        /// Startup main method.
+        ///     Startup main method.
         /// </summary>
         /// <param name="args">A collection of input arguments.</param>
         /// <returns>Integer.</returns>
@@ -32,19 +32,14 @@ namespace FixProjects
             catch (Exception e)
             {
                 Console.WriteLine(e);
+
                 return 1;
             }
             finally
             {
-                if (Debugger.IsAttached)
-                {
-                    Console.ReadLine();
-                }
+                if (Debugger.IsAttached) Console.ReadLine();
 
-                if (serviceProvider is IDisposable disposable)
-                {
-                    disposable.Dispose();
-                }
+                if (serviceProvider is IDisposable disposable) disposable.Dispose();
             }
         }
     }

@@ -6,52 +6,42 @@ using System.Xml.Linq;
 namespace FixProjects.Abstract
 {
     /// <summary>
-    /// Provides operations on project files.
+    ///     Provides operations on project files.
     /// </summary>
-    interface IOperateOnProjectFiles
+    internal interface IOperateOnProjectFiles
     {
         /// <summary>
-        /// Represents a final version of project file.
-        /// </summary>
-        XDocument ModifiedDocument { get; }
-
-        /// <summary>
-        /// Represents a logger for changes are created.
+        ///     Gets the list of logged changes.
         /// </summary>
         IList<string> Changes { get; }
 
         /// <summary>
-        /// Fix project nodes.
+        ///     Gets the final version of project file.
         /// </summary>
-        /// <returns></returns>
-        List<ItemGroupEntity> FixContent();
+        XDocument ModifiedDocument { get; }
 
         /// <summary>
-        /// Deletes duplicate nodes.
+        ///     Deletes duplicate nodes.
         /// </summary>
-        /// <param name="entity"></param>
         void DeleteDuplicates(ItemGroupEntity entity);
 
         /// <summary>
-        /// Deletes references to non existent files.
+        ///     Deletes references to non existent files.
         /// </summary>
-        /// <param name="entity"></param>
         void DeleteReferencesToNonExistentFiles(ItemGroupEntity entity);
 
         /// <summary>
-        /// Creates and sorts a final version of document.
+        ///     Fix project nodes.
         /// </summary>
-        /// <param name="entity"></param>
-        /// <param name="sort"></param>
+        List<ItemGroupEntity> FixContent();
+
+        /// <summary>
+        ///     Creates and sorts a final version of document.
+        /// </summary>
         void MergeAndSortItemGroups(ItemGroupEntity entity, bool sort);
 
         /// <summary>
-        /// Writes detailed logging.
-        /// </summary>
-        void Verbose() => Changes.ForEach(x => Console.WriteLine(x));
-
-        /// <summary>
-        /// Sorts property nodes.
+        ///     Sorts property nodes.
         /// </summary>
         void SortPropertyGroups()
         {
@@ -59,24 +49,30 @@ namespace FixProjects.Abstract
 
             void Sort(XElement element, bool sortAttributes = true)
             {
-                if (element == null)
-                    throw new ArgumentNullException(nameof(element));
+                if (element == null) throw new ArgumentNullException(nameof(element));
 
                 if (sortAttributes)
                 {
-                    var atts = element.Attributes().OrderBy(a => a.ToString()).ToList();
-                    atts.RemoveAll(x => true);
-                    atts.ForEach(element.Add);
+                    var sortedAttributes = element.Attributes().OrderBy(a => a.ToString()).ToList();
+                    sortedAttributes.RemoveAll(x => true);
+                    sortedAttributes.ForEach(element.Add);
                 }
 
                 var sorted = element.Elements().OrderBy(e => e.Name.ToString()).ToList();
-                if (!element.HasElements)
-                    return;
+                if (!element.HasElements) return;
 
                 element.RemoveNodes();
                 sorted.ForEach(c => Sort(c));
                 sorted.ForEach(element.Add);
             }
+        }
+
+        /// <summary>
+        ///     Writes detailed logging.
+        /// </summary>
+        void Verbose()
+        {
+            Changes.ForEach(x => Console.WriteLine(x));
         }
     }
 }

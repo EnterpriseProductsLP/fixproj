@@ -11,10 +11,8 @@ namespace FixProjects.Implementation
     {
         private readonly Dictionary<string, XDocument> _listOfChangedFiles = new Dictionary<string, XDocument>();
 
-        public CommandLineOptions CommandLineOptions { get; set; }
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="ProcessFiles"/> class.
+        ///     Initializes a new instance of the <see cref="ProcessFiles" /> class.
         /// </summary>
         /// <param name="commandLineOptions">Options.</param>
         public ProcessFiles(CommandLineOptions commandLineOptions)
@@ -22,18 +20,23 @@ namespace FixProjects.Implementation
             CommandLineOptions = commandLineOptions;
         }
 
+        public CommandLineOptions CommandLineOptions { get; set; }
+
         /// <inheritdoc />
         public int Run()
         {
+            var searchOption = CommandLineOptions.Recursive
+                ? SearchOption.AllDirectories
+                : SearchOption.TopDirectoryOnly;
+
             var files = Directory
-                .GetFiles(CommandLineOptions.TargetDirectory, CommandLineOptions.FileMask,
-                    CommandLineOptions.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                .GetFiles(
+                    CommandLineOptions.TargetDirectory,
+                    CommandLineOptions.FileMask,
+                    searchOption)
                 .Where(file => !file.Contains(@"\packages\"));
 
-            if (CommandLineOptions.Preview)
-            {
-                Console.WriteLine("*** PREVIEW ONLY! DON'T PANIC!\n");
-            }
+            if (CommandLineOptions.Preview) Console.WriteLine("*** PREVIEW ONLY! DON'T PANIC!\n");
 
             List<ItemGroupEntity> itemGroupEntities = null;
             foreach (var file in files)
@@ -43,40 +46,25 @@ namespace FixProjects.Implementation
 
                 Console.WriteLine($"Processing: {file}");
 
-                if (CommandLineOptions.FixContent)
-                {
-                    itemGroupEntities = templateInstance.FixContent();
-                }
+                if (CommandLineOptions.FixContent) itemGroupEntities = templateInstance.FixContent();
 
-                if (CommandLineOptions.Sort)
-                {
-                    templateInstance.SortPropertyGroups();
-                }
+                if (CommandLineOptions.Sort) templateInstance.SortPropertyGroups();
 
-                itemGroupEntities?.ForEach(itemGroup =>
-                {
-                    if (CommandLineOptions.DeleteDuplicates)
+                itemGroupEntities?.ForEach(
+                    itemGroup =>
                     {
-                        templateInstance.DeleteDuplicates(itemGroup);
-                    }
+                        if (CommandLineOptions.DeleteDuplicates) templateInstance.DeleteDuplicates(itemGroup);
 
-                    if (CommandLineOptions.DeleteReferencesToNonExistentFiles)
-                    {
-                        templateInstance.DeleteReferencesToNonExistentFiles(itemGroup);
-                    }
+                        if (CommandLineOptions.DeleteReferencesToNonExistentFiles)
+                            templateInstance.DeleteReferencesToNonExistentFiles(itemGroup);
 
-                    templateInstance.MergeAndSortItemGroups(itemGroup, CommandLineOptions.Sort);
+                        templateInstance.MergeAndSortItemGroups(itemGroup, CommandLineOptions.Sort);
 
-                    if (CommandLineOptions.Verbose)
-                    {
-                        templateInstance.Verbose();
-                    }
-                });
+                        if (CommandLineOptions.Verbose) templateInstance.Verbose();
+                    });
 
                 if (!AreEqual(originalContent, templateInstance.ModifiedDocument))
-                {
                     _listOfChangedFiles.Add(file, templateInstance.ModifiedDocument);
-                }
 
                 Console.WriteLine("  {0} CHANGES\n", templateInstance.Changes.Count);
             }
@@ -88,15 +76,9 @@ namespace FixProjects.Implementation
 
         private bool AreEqual(XDocument originalFile, XDocument modifiedFile)
         {
-            if (!XNode.DeepEquals(originalFile, modifiedFile))
-            {
-                return false;
-            }
+            if (!XNode.DeepEquals(originalFile, modifiedFile)) return false;
 
-            if (!CommandLineOptions.Preview)
-            {
-                Console.WriteLine("  NO CHANGES\n");
-            }
+            if (!CommandLineOptions.Preview) Console.WriteLine("  NO CHANGES\n");
 
             return true;
         }
@@ -106,16 +88,14 @@ namespace FixProjects.Implementation
             if (!CommandLineOptions.Preview)
             {
                 Console.WriteLine("\nSaving {0} sanitized files.", _listOfChangedFiles.Count);
-                foreach (var file in _listOfChangedFiles)
-                {
-                    file.Value.Save(file.Key);
-                }
+                foreach (var file in _listOfChangedFiles) file.Value.Save(file.Key);
 
                 Console.WriteLine("Saved {0} sanitized files.", _listOfChangedFiles.Count);
             }
             else
             {
-                Console.WriteLine("\nPreview: {0} files would have been changed given your criteria.",
+                Console.WriteLine(
+                    "\nPreview: {0} files would have been changed given your criteria.",
                     _listOfChangedFiles.Count);
             }
         }
