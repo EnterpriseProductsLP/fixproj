@@ -24,10 +24,10 @@ namespace FixProjects
                 new CommandLineParser(CommandLineOptions).Parse();
 
                 serviceProvider = new ServiceCollection()
-                    .AddSingleton<IProcess, ProcessFiles>(x => new ProcessFiles(CommandLineOptions))
+                    .AddSingleton<IManageProjectFileOperations, ProjectFileOperationManager>(x => new ProjectFileOperationManager(CommandLineOptions))
                     .BuildServiceProvider();
 
-                return serviceProvider.GetService<IProcess>().Run();
+                return serviceProvider.GetService<IManageProjectFileOperations>().Run();
             }
             catch (Exception e)
             {

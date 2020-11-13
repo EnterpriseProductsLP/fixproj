@@ -7,15 +7,15 @@ using FixProjects.Abstract;
 
 namespace FixProjects.Implementation
 {
-    public class ProcessFiles : IProcess
+    public class ProjectFileOperationManager : IManageProjectFileOperations
     {
         private readonly Dictionary<string, XDocument> _listOfChangedFiles = new Dictionary<string, XDocument>();
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ProcessFiles" /> class.
+        ///     Initializes a new instance of the <see cref="ProjectFileOperationManager" /> class.
         /// </summary>
         /// <param name="commandLineOptions">Options.</param>
-        public ProcessFiles(CommandLineOptions commandLineOptions)
+        public ProjectFileOperationManager(CommandLineOptions commandLineOptions)
         {
             CommandLineOptions = commandLineOptions;
         }

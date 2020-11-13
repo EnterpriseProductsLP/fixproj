@@ -1,6 +1,6 @@
 ﻿namespace FixProjects.Abstract
 {
-    internal interface IProcess
+    internal interface IManageProjectFileOperations
     {
         int Run();
     }
