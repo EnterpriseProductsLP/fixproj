@@ -4,7 +4,7 @@ namespace fixproj
 {
     [CommandLineManager(ApplicationName = "fixproj")]
     [CommandLineOptionGroup("commands", Name = "Commands", Require = OptionGroupRequirement.None)]
-    public class Options
+    public class CommandLineOptions
     {
         [CommandLineOption(Aliases = "r", Name = "recursive", Description = "Search the target directory recursively for project files that match the mask", MinOccurs = 0, MaxOccurs = 1)]
         public bool Recursive { get; set; }

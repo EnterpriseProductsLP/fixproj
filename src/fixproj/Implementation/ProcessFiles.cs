@@ -11,26 +11,26 @@ namespace fixproj.Implementation
     {
         private readonly Dictionary<string, XDocument> _listOfChangedFiles = new Dictionary<string, XDocument>();
 
-        public Options Options { get; set; }
+        public CommandLineOptions CommandLineOptions { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessFiles"/> class.
         /// </summary>
-        /// <param name="options">Options.</param>
-        public ProcessFiles(Options options)
+        /// <param name="commandLineOptions">Options.</param>
+        public ProcessFiles(CommandLineOptions commandLineOptions)
         {
-            Options = options;
+            CommandLineOptions = commandLineOptions;
         }
 
         /// <inheritdoc />
         public int Run()
         {
             var files = Directory
-                .GetFiles(Options.TargetDirectory, Options.FileMask,
-                    Options.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                .GetFiles(CommandLineOptions.TargetDirectory, CommandLineOptions.FileMask,
+                    CommandLineOptions.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
                 .Where(file => !file.Contains(@"\packages\"));
 
-            if (Options.Preview)
+            if (CommandLineOptions.Preview)
             {
                 Console.WriteLine("*** PREVIEW ONLY! DON'T PANIC!\n");
             }
@@ -43,31 +43,31 @@ namespace fixproj.Implementation
 
                 Console.WriteLine($"Processing: {file}");
 
-                if (Options.FixContent)
+                if (CommandLineOptions.FixContent)
                 {
                     itemGroupEntities = templateInstance.FixContent();
                 }
 
-                if (Options.Sort)
+                if (CommandLineOptions.Sort)
                 {
                     templateInstance.SortPropertyGroups();
                 }
 
                 itemGroupEntities?.ForEach(itemGroup =>
                 {
-                    if (Options.DeleteDuplicates)
+                    if (CommandLineOptions.DeleteDuplicates)
                     {
                         templateInstance.DeleteDuplicates(itemGroup);
                     }
 
-                    if (Options.DeleteReferencesToNonExistentFiles)
+                    if (CommandLineOptions.DeleteReferencesToNonExistentFiles)
                     {
                         templateInstance.DeleteReferencesToNonExistentFiles(itemGroup);
                     }
 
-                    templateInstance.MergeAndSortItemGroups(itemGroup, Options.Sort);
+                    templateInstance.MergeAndSortItemGroups(itemGroup, CommandLineOptions.Sort);
 
-                    if (Options.Verbose)
+                    if (CommandLineOptions.Verbose)
                     {
                         templateInstance.Verbose();
                     }
@@ -93,7 +93,7 @@ namespace fixproj.Implementation
                 return false;
             }
 
-            if (!Options.Preview)
+            if (!CommandLineOptions.Preview)
             {
                 Console.WriteLine("  NO CHANGES\n");
             }
@@ -103,7 +103,7 @@ namespace fixproj.Implementation
 
         private void SaveChanges()
         {
-            if (!Options.Preview)
+            if (!CommandLineOptions.Preview)
             {
                 Console.WriteLine("\nSaving {0} sanitized files.", _listOfChangedFiles.Count);
                 foreach (var file in _listOfChangedFiles)

@@ -9,7 +9,7 @@ namespace fixproj
 {
     public class Program
     {
-        private static readonly Options Options = new Options();
+        private static readonly CommandLineOptions CommandLineOptions = new CommandLineOptions();
 
         /// <summary>
         /// Startup main method.
@@ -21,10 +21,10 @@ namespace fixproj
             ServiceProvider serviceProvider = null;
             try
             {
-                new CommandLineParser(Options).Parse();
+                new CommandLineParser(CommandLineOptions).Parse();
 
                 serviceProvider = new ServiceCollection()
-                    .AddSingleton<IProcess, ProcessFiles>(x => new ProcessFiles(Options))
+                    .AddSingleton<IProcess, ProcessFiles>(x => new ProcessFiles(CommandLineOptions))
                     .BuildServiceProvider();
 
                 return serviceProvider.GetService<IProcess>().Run();
