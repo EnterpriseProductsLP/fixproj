@@ -4,9 +4,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
-using fixproj.Abstract;
+using FixProjects.Abstract;
 
-namespace fixproj.Implementation
+namespace FixProjects.Implementation
 {
     public class DotNetFrameworkTemplate : BaseTemplate, IOperateOnProjectFiles
     {

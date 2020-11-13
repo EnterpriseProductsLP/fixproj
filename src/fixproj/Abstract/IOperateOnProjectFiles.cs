@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace fixproj.Abstract
+namespace FixProjects.Abstract
 {
     /// <summary>
     /// Provides operations on project files.

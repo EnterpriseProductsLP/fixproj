@@ -5,7 +5,8 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>fixproj.Program</StartupObject>
+    <StartupObject>FixProjects.Program</StartupObject>
+    <RootNamespace>FixProjects</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="C5" Version="2.5.3" />

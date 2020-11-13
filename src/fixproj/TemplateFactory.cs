@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Xml.Linq;
-using fixproj.Abstract;
-using fixproj.Implementation;
+using FixProjects.Abstract;
+using FixProjects.Implementation;
 
-namespace fixproj
+namespace FixProjects
 {
     internal class TemplateFactory
     {

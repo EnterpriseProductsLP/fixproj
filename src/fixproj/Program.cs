@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using fixproj.Abstract;
-using fixproj.Implementation;
+using FixProjects.Abstract;
+using FixProjects.Implementation;
 using Microsoft.Extensions.DependencyInjection;
 using Plossum.CommandLine;
 
-namespace fixproj
+namespace FixProjects
 {
     public class Program
     {

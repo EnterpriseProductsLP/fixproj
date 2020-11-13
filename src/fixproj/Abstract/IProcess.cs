@@ -1,4 +1,4 @@
-﻿namespace fixproj.Abstract
+﻿namespace FixProjects.Abstract
 {
     /// <summary>
     /// Provides operation called from the main method.

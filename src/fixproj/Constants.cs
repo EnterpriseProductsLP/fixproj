@@ -1,4 +1,4 @@
-﻿namespace fixproj
+﻿namespace FixProjects
 {
     internal class Constants
     {
