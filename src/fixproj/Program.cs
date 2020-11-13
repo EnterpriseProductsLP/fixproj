@@ -14,9 +14,8 @@ namespace FixProjects
         /// <summary>
         ///     Startup main method.
         /// </summary>
-        /// <param name="args">A collection of input arguments.</param>
         /// <returns>Integer.</returns>
-        public static int Main(string[] args)
+        public static int Main()
         {
             ServiceProvider serviceProvider = null;
             try
