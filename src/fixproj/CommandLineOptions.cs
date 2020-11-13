@@ -1,7 +1,7 @@
 ﻿using System;
 using Plossum.CommandLine;
 
-namespace fixproj
+namespace FixProjects
 {
     [CommandLineManager(ApplicationName = "fixproj")]
     [CommandLineOptionGroup("commands", Name = "Commands", Require = OptionGroupRequirement.None)]

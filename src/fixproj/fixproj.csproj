@@ -8,7 +8,8 @@
     <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>fixproj.Program</StartupObject>
+    <StartupObject>FixProjects.Program</StartupObject>
+    <RootNamespace>FixProjects</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="C5">

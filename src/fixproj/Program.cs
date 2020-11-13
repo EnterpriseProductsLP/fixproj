@@ -6,7 +6,7 @@ using System.Linq;
 using System.Xml.Linq;
 using Plossum.CommandLine;
 
-namespace fixproj
+namespace FixProjects
 {
     // ReSharper disable PossibleNullReferenceException
     // ReSharper disable PossibleMultipleEnumeration
