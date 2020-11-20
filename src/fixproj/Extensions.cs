@@ -47,13 +47,21 @@ namespace FixProjects
         /// </summary>
         /// <param name="localName">Local name.</param>
         /// <returns>Attribute name.</returns>
-        internal static string GetAttributeName(this string localName)
+        internal static string GetAttributeName(this XElement element)
         {
-            if (string.IsNullOrWhiteSpace(localName)) return null;
+            if (element == null) return null;
 
-            var attributeName = Constants.IncludeAttribute;
+            string attributeName = null;
+            var listAllowedAttributes = new List<string>{ Constants.RemoveAttribute, Constants.IncludeAttribute, Constants.UpdateAttribute };
+            var attributes = element.Attributes();
+            
+            foreach (var attribute in attributes)
+            {
+                if (!listAllowedAttributes.Contains(attribute.Name.LocalName)) continue;
 
-            if (localName.Equals(Constants.CompileNode)) attributeName = Constants.RemoveAttribute;
+                attributeName = attribute.Name.LocalName;
+                break;
+            }
 
             return attributeName;
         }

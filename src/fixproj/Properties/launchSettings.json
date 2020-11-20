@@ -2,7 +2,7 @@
   "profiles": {
     "fixproj": {
       "commandName": "Project",
-      "commandLineArgs": "-fix -d -dd -s -r -t C:\\Users\\eburcham\\src\\Estream\\Source\\Estream.Contracts -m *.csproj"
+      "commandLineArgs": "-fix -d -dd -s -r -t C:\\Users\\smerdovic\\src\\Estream\\Source -m *.csproj"
     }
   }
 }

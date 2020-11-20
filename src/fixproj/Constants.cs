@@ -4,6 +4,8 @@
     {
         internal const string IncludeAttribute = "Include";
 
+        internal const string UpdateAttribute = "Update";
+
         internal const string ContentNode = "Content";
 
         internal const string EmbeddedResourceNode = "EmbeddedResource";

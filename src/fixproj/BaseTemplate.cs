@@ -130,7 +130,7 @@ namespace FixProjects
         {
             if (groupToAdd == null) throw new ArgumentNullException(nameof(groupToAdd));
 
-            var attributeName = entity.LocalName.GetAttributeName();
+            var attributeName = entity.Element.FirstOrDefault().GetAttributeName();
 
             if (sort)
                 groupToAdd.Add(entity.Element.OrderBy(x => x.AttributeValueByName(attributeName)));

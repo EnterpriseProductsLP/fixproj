@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using FixProjects.Abstract;
@@ -11,7 +12,8 @@ namespace FixProjects.Implementation
         private readonly List<string> _listOfAllowedActions = new List<string>
         {
             Constants.Reference, Constants.ProjectReference, Constants.Folder, Constants.PackageReference,
-            Constants.NoneNode, Constants.CompileNode, Constants.ContentNode
+            Constants.NoneNode, Constants.CompileNode, Constants.ContentNode, Constants.EmbeddedResourceNode,
+            Constants.Folder
         };
 
         private readonly List<string> _listOfDirectoryBuildProperties = new List<string>
@@ -45,13 +47,7 @@ namespace FixProjects.Implementation
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var attributeName = entity.LocalName.GetAttributeName();
-
-            // additional check for None local name because it can contain either Remove or Include attribute
-            // <None Include="..\SharedAppSettings.config" Link="SharedAppSettings.config">
-            // <None Remove="InvoicePdfDomain\Reports\InvoiceTemplate-AccountsPayable.rdlc" />
-            if (entity.LocalName.Equals(Constants.NoneNode))
-                attributeName = entity.Element.Select(x => x.FirstAttribute).FirstOrDefault()?.Name.LocalName;
+            var attributeName = entity.Element.FirstOrDefault().GetAttributeName();
 
             DeleteDuplicatesBasedOnAttribute(entity, Changes, x => x.AttributeValueByName(attributeName));
         }
@@ -102,7 +98,7 @@ namespace FixProjects.Implementation
                                && !string.IsNullOrWhiteSpace(element.AttributeValueByName(Constants.RemoveAttribute)))
                 .Remove();
 
-            var itemGroupElement = new XElement(Constants.ItemGroupNode);
+            var noneRemoveElements = new XElement(Constants.ItemGroupNode);
             ItemGroupElements.Elements().ForEach(
                 element =>
                 {
@@ -121,29 +117,41 @@ namespace FixProjects.Implementation
 
                     // if file contains EmbeddedResource or Content nodes, these nodes should be listed in None item groups as well
                     // creates this group automatically
-                    if (element.Name.LocalName.Equals(Constants.EmbeddedResourceNode) ||
-                        element.Name.LocalName.Equals(Constants.ContentNode))
-                        itemGroupElement.Add(
-                            new XElement(
-                                Constants.NoneNode,
-                                new XAttribute(Constants.RemoveAttribute,
-                                    element.AttributeValueByName(Constants.IncludeAttribute))));
+                    if (element.Name.LocalName.Equals(Constants.EmbeddedResourceNode) || element.Name.LocalName.Equals(Constants.ContentNode))
+                        InsertIntoNoneRemoveElements(noneRemoveElements, element.AttributeValueByName(Constants.IncludeAttribute));
                 });
 
-            if (!itemGroupElement.HasNoContent()) ItemGroupElements.Add(itemGroupElement);
+            var itemsForProcessing = new List<ItemGroupEntity>();
 
-            return ItemGroupElements
+            if (!noneRemoveElements.HasNoContent()) 
+                itemsForProcessing.Add(new ItemGroupEntity { LocalName = Constants.NoneNode, Element = noneRemoveElements.Elements().ToList() });
+
+            itemsForProcessing.AddRange(ItemGroupElements
                 .SelectMany(x => x.Elements())
-                .ToLookup(x => x.Name)
-                .OrderBy(x => x.Key.LocalName)
-                .Select(x => new ItemGroupEntity {LocalName = x.Key.LocalName, Element = new List<XElement>(x)})
-                .ToList();
+                .ToLookup(x => new { x.Name, x.FirstAttribute?.Name.LocalName })
+                .OrderBy(x => x.Key.Name.LocalName)
+                .Select(x => new ItemGroupEntity { LocalName = x.Key.Name.LocalName, Element = new List<XElement>(x) })
+                .ToList());
+
+            return itemsForProcessing;
         }
 
         /// <inheritdoc />
         public void MergeAndSortItemGroups(ItemGroupEntity entity, bool sort)
         {
             MergeAndSortItemGroups(new XElement(Constants.ItemGroupNode), entity, sort);
+        }
+
+        private void InsertIntoNoneRemoveElements(XElement noneRemoveElement, string attributeValue)
+        {
+            if(noneRemoveElement == null) throw new ArgumentNullException(nameof(noneRemoveElement));
+
+            if(string.IsNullOrWhiteSpace(attributeValue) || attributeValue.Contains(".config")) return;
+
+            noneRemoveElement.Add(
+                new XElement(
+                    Constants.NoneNode,
+                    new XAttribute(Constants.RemoveAttribute, attributeValue)));
         }
     }
 }
