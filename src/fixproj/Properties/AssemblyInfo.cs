@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Enterprise Products Partners L.P. (Enterprise)")]
 [assembly: AssemblyProduct("fixproj")]
-[assembly: AssemblyCopyright("Copyright (C) 2016 Enterprise Products Partners L.P. (Enterprise)")]
+[assembly: AssemblyCopyright("Copyright (C) 2020 Enterprise Products Partners L.P. (Enterprise)")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
