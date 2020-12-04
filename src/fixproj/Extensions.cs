@@ -1,68 +1,99 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace fixproj
+namespace FixProjects
 {
-    public static class Extensions
+    internal static class Extensions
     {
-        public static bool EndsWithAnyOf(this string subject, params string[] suffixes)
+        /// <summary>
+        ///     Finds attribute value by name.
+        /// </summary>
+        /// <param name="element">XElement.</param>
+        /// <param name="attributeName">Attribute name.</param>
+        /// <returns>An attribute value.</returns>
+        internal static string AttributeValueByName(this XElement element, string attributeName)
         {
-            return suffixes.Any(subject.EndsWith);
+            if (element == null || !element.HasAttributes ||
+                string.IsNullOrWhiteSpace(element.Attribute(attributeName)?.Value)) return null;
+
+            return element.Attribute(attributeName)?.Value;
         }
 
-        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
-        {
-            var seenKeys = new HashSet<TKey>();
-            return source.Where(element => seenKeys.Add(keySelector(element)));
-        }
-
-        public static IEnumerable<XElement> ElementsByLocalName(this XElement element, string localName)
+        /// <summary>
+        ///     Finds element by local name.
+        /// </summary>
+        /// <param name="element">XElement.</param>
+        /// <param name="localName">Local name.</param>
+        /// <returns>A collection of XElement.</returns>
+        internal static IEnumerable<XElement> ElementsByLocalName(this XElement element, string localName)
         {
             return element.Elements().Where(x => x.Name.LocalName == localName);
         }
 
-        public static IEnumerable<XElement> DescendantsByLocalName(this XElement element, string localName)
+        /// <summary>
+        ///     Checks if string is a member of input array.
+        /// </summary>
+        /// <param name="subject">String.</param>
+        /// <param name="suffixes">Array of string.</param>
+        /// <returns>Boolean.</returns>
+        internal static bool EndsWithAnyOf(this string subject, params string[] suffixes)
         {
-            return element.Descendants().Where(x => x.Name.LocalName == localName);
+            return suffixes.Any(subject.EndsWith);
         }
 
-        public static bool HasNoContent(this XElement element)
+        /// <summary>
+        ///     Returns attribute name based on local name.
+        /// </summary>
+        /// <param name="localName">Local name.</param>
+        /// <returns>Attribute name.</returns>
+        internal static string GetAttributeName(this XElement element)
+        {
+            if (element == null) return null;
+
+            string attributeName = null;
+            var listAllowedAttributes = new List<string>{ Constants.RemoveAttribute, Constants.IncludeAttribute, Constants.UpdateAttribute };
+            var attributes = element.Attributes();
+            
+            foreach (var attribute in attributes)
+            {
+                if (!listAllowedAttributes.Contains(attribute.Name.LocalName)) continue;
+
+                attributeName = attribute.Name.LocalName;
+                break;
+            }
+
+            return attributeName;
+        }
+
+        /// <summary>
+        ///     Checks if node contains value.
+        /// </summary>
+        /// <param name="element">XElement.</param>
+        /// <returns>Boolean.</returns>
+        internal static bool HasNoContent(this XElement element)
         {
             return string.IsNullOrWhiteSpace(element.Value) && !element.HasElements;
         }
 
-        public static void MakeEmpty(this XElement element)
+        /// <summary>
+        ///     Checks if attribute value contains provided extension.
+        /// </summary>
+        /// <param name="element">XElement.</param>
+        /// <param name="extension">Extension.</param>
+        /// <returns>An attribute value.</returns>
+        internal static string IfAttributesContainExtension(this XElement element, string extension)
+        {
+            return element.Attributes().FirstOrDefault(x => x.Value.EndsWith(extension))?.Value;
+        }
+
+        /// <summary>
+        ///     Makes element as empty node.
+        /// </summary>
+        /// <param name="element">XElement.</param>
+        internal static void MakeEmpty(this XElement element)
         {
             element.ReplaceNodes(null);
-        }
-
-        public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
-        {
-            foreach (var v in source)
-                action(v);
-        }
-
-        public static void Sort(this XElement source, bool sortAttributes = true)
-        {
-            if (source == null)
-                throw new ArgumentNullException(nameof(source));
-
-            if (sortAttributes)
-            {
-                var atts = source.Attributes().OrderBy(a => a.ToString()).ToList();
-                atts.RemoveAll(x => true);
-                atts.ForEach(source.Add);
-            }
-
-            var sorted = source.Elements().OrderBy(e => e.Name.ToString()).ToList();
-            if (!source.HasElements)
-                return;
-
-            source.RemoveNodes();
-            sorted.ForEach(c => c.Sort());
-            sorted.ForEach(source.Add);
         }
     }
 }
