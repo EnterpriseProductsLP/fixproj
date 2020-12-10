@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using FixProjects.Abstract;
@@ -102,23 +101,15 @@ namespace FixProjects.Implementation
             ItemGroupElements.Elements().ForEach(
                 element =>
                 {
-                    var originalCaseIncludeValue = element.AttributeValueByName(Constants.IncludeAttribute);
-
                     if (element.HasNoContent())
-                    {
-                        Changes.Add(
-                            $"{element.Name.LocalName}: removing all empty content from {originalCaseIncludeValue}");
                         element.MakeEmpty();
-                    }
-
-                    if (string.IsNullOrWhiteSpace(originalCaseIncludeValue)) return;
 
                     FixCopyIssue(element.Element(Constants.CopyToOutputDirectoryElement), Changes);
 
                     // if file contains EmbeddedResource or Content nodes, these nodes should be listed in None item groups as well
                     // creates this group automatically
                     if (element.Name.LocalName.Equals(Constants.EmbeddedResourceNode) || element.Name.LocalName.Equals(Constants.ContentNode))
-                        InsertIntoNoneRemoveElements(noneRemoveElements, element.AttributeValueByName(Constants.IncludeAttribute));
+                        InsertIntoNoneRemoveElements(noneRemoveElements, element.AttributeValueByName(element.GetAttributeName()));
                 });
 
             var itemsForProcessing = new List<ItemGroupEntity>();
@@ -152,6 +143,8 @@ namespace FixProjects.Implementation
                 new XElement(
                     Constants.NoneNode,
                     new XAttribute(Constants.RemoveAttribute, attributeValue)));
+
+            Changes.Add($"Create new none node with Remove attribute name and attribute value {attributeValue}");
         }
     }
 }

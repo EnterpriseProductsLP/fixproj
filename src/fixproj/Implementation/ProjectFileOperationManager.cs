@@ -21,7 +21,7 @@ namespace FixProjects.Implementation
         }
 
         public CommandLineOptions CommandLineOptions { get; set; }
-
+        
         /// <inheritdoc />
         public int Run()
         {
@@ -46,7 +46,7 @@ namespace FixProjects.Implementation
 
                 Console.WriteLine($"Processing: {file}");
 
-                if (CommandLineOptions.FixContent) itemGroupEntities = templateInstance.FixContent();
+                itemGroupEntities = templateInstance.FixContent();
 
                 if (CommandLineOptions.Sort) templateInstance.SortPropertyGroups();
 
@@ -64,9 +64,10 @@ namespace FixProjects.Implementation
                     });
 
                 if (!AreEqual(originalContent, templateInstance.ModifiedDocument))
+                {
+                    Console.WriteLine($"CONTAINS CHANGES \n");
                     _listOfChangedFiles.Add(file, templateInstance.ModifiedDocument);
-
-                Console.WriteLine("  {0} CHANGES\n", templateInstance.Changes.Count);
+                }
             }
 
             SaveChanges();
