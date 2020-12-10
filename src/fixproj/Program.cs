@@ -26,7 +26,12 @@ namespace FixProjects
                     .AddSingleton<IManageProjectFileOperations, ProjectFileOperationManager>(x => new ProjectFileOperationManager(CommandLineOptions))
                     .BuildServiceProvider();
 
-                return serviceProvider.GetService<IManageProjectFileOperations>().Run();
+                var result = serviceProvider.GetService<IManageProjectFileOperations>().Run();
+
+                // if the number of changed projects is 0, then return 0, otherwise return 1
+                if (result.Equals(0)) return 0;
+
+                return 1;
             }
             catch (Exception e)
             {

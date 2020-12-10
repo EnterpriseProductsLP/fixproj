@@ -102,23 +102,15 @@ namespace FixProjects.Implementation
             ItemGroupElements.Elements().ForEach(
                 element =>
                 {
-                    var originalCaseIncludeValue = element.AttributeValueByName(Constants.IncludeAttribute);
-
                     if (element.HasNoContent())
-                    {
-                        Changes.Add(
-                            $"{element.Name.LocalName}: removing all empty content from {originalCaseIncludeValue}");
                         element.MakeEmpty();
-                    }
-
-                    if (string.IsNullOrWhiteSpace(originalCaseIncludeValue)) return;
 
                     FixCopyIssue(element.Element(Constants.CopyToOutputDirectoryElement), Changes);
 
                     // if file contains EmbeddedResource or Content nodes, these nodes should be listed in None item groups as well
                     // creates this group automatically
                     if (element.Name.LocalName.Equals(Constants.EmbeddedResourceNode) || element.Name.LocalName.Equals(Constants.ContentNode))
-                        InsertIntoNoneRemoveElements(noneRemoveElements, element.AttributeValueByName(Constants.IncludeAttribute));
+                        InsertIntoNoneRemoveElements(noneRemoveElements, element.AttributeValueByName(element.GetAttributeName()));
                 });
 
             var itemsForProcessing = new List<ItemGroupEntity>();
