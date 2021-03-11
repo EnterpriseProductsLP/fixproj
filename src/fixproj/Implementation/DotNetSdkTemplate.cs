@@ -18,8 +18,7 @@ namespace FixProjects.Implementation
         private readonly List<string> _listOfDirectoryBuildProperties = new List<string>
         {
             Constants.Authors, Constants.Company, Constants.Copyright, Constants.GenerateDocumentationFile,
-            Constants.Product, Constants.AssemblyName, Constants.RootNamespace,
-            Constants.GeneratePackageOnBuild, Constants.AutoGenerateBindingRedirects,
+            Constants.Product, Constants.AssemblyName, Constants.GeneratePackageOnBuild, Constants.AutoGenerateBindingRedirects,
             Constants.GenerateBindingRedirectsOutputType, Constants.RestoreProjectStyle, Constants.PlatformTarget
         };
 
