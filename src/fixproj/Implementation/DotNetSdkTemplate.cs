@@ -116,6 +116,25 @@ namespace FixProjects.Implementation
             if (!noneRemoveElements.HasNoContent()) 
                 itemsForProcessing.Add(new ItemGroupEntity { LocalName = Constants.NoneNode, Element = noneRemoveElements.Elements().ToList() });
 
+            List<XElement> itemGroupsWithAttributeValue = new List<XElement>();
+            ItemGroupElements.ForEach(x =>
+            {
+                if (!x.HasAttributes)
+                    return;
+                
+                itemsForProcessing.Add(new ItemGroupEntity 
+                { 
+                    LocalName = x.Elements().First().Name.LocalName, 
+                    LocalAttributeName = x.FirstAttribute.Name.LocalName, 
+                    LocalAttributeValue = x.FirstAttribute.Value,
+                    Element = x.Elements().ToList() 
+                });
+                itemGroupsWithAttributeValue.Add(x);
+            });
+
+            if (itemGroupsWithAttributeValue.Any())
+                itemGroupsWithAttributeValue.ForEach(x => ItemGroupElements.Remove(x));
+
             itemsForProcessing.AddRange(ItemGroupElements
                 .SelectMany(x => x.Elements())
                 .ToLookup(x => new { x.Name, x.FirstAttribute?.Name.LocalName })
@@ -123,13 +142,17 @@ namespace FixProjects.Implementation
                 .Select(x => new ItemGroupEntity { LocalName = x.Key.Name.LocalName, Element = new List<XElement>(x) })
                 .ToList());
 
-            return itemsForProcessing;
+            return itemsForProcessing.OrderBy(x => x.LocalName).ToList();
         }
 
         /// <inheritdoc />
         public void MergeAndSortItemGroups(ItemGroupEntity entity, bool sort)
         {
-            MergeAndSortItemGroups(new XElement(Constants.ItemGroupNode), entity, sort);
+            var element = new XElement(Constants.ItemGroupNode);
+            if (!string.IsNullOrWhiteSpace(entity.LocalAttributeName))
+                element.Add(new XAttribute(entity.LocalAttributeName, entity.LocalAttributeValue));
+
+            MergeAndSortItemGroups(element, entity, sort);
         }
 
         private void InsertIntoNoneRemoveElements(XElement noneRemoveElement, string attributeValue)
