@@ -24,7 +24,7 @@ namespace FixProjects
 
             var projectType = document.Root.Attribute("Sdk")?.Value;
 
-            if (!string.IsNullOrWhiteSpace(projectType) && projectType.Equals(_projectTypeValue))
+            if (!string.IsNullOrWhiteSpace(projectType) && projectType.StartsWith(_projectTypeValue))
                 return new DotNetSdkTemplate(file);
 
             return new DotNetFrameworkTemplate(file);
