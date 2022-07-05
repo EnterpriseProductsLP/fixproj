@@ -54,8 +54,6 @@
 
         internal const string AssemblyName = "AssemblyName";
 
-        internal const string RootNamespace = "RootNamespace";
-
         internal const string GeneratePackageOnBuild = "GeneratePackageOnBuild";
 
         internal const string AutoGenerateBindingRedirects = "AutoGenerateBindingRedirects";
