@@ -48,5 +48,4 @@ Preview the results if you were to perform various content fixups of the nodes i
     fixproj -v -dd -d -p -t Source\Web -m Web.csproj
 
 ## Tested With
-* Visual Studio 2015
-* Visual Studio 2013
+* Visual Studio 2013, 2015, 2017, 2019, and 2022

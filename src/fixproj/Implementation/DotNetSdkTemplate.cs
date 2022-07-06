@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using FixProjects.Abstract;
@@ -19,8 +18,7 @@ namespace FixProjects.Implementation
         private readonly List<string> _listOfDirectoryBuildProperties = new List<string>
         {
             Constants.Authors, Constants.Company, Constants.Copyright, Constants.GenerateDocumentationFile,
-            Constants.Product, Constants.AssemblyName, Constants.RootNamespace,
-            Constants.GeneratePackageOnBuild, Constants.AutoGenerateBindingRedirects,
+            Constants.Product, Constants.AssemblyName, Constants.GeneratePackageOnBuild, Constants.AutoGenerateBindingRedirects,
             Constants.GenerateBindingRedirectsOutputType, Constants.RestoreProjectStyle, Constants.PlatformTarget
         };
 
@@ -102,29 +100,40 @@ namespace FixProjects.Implementation
             ItemGroupElements.Elements().ForEach(
                 element =>
                 {
-                    var originalCaseIncludeValue = element.AttributeValueByName(Constants.IncludeAttribute);
-
                     if (element.HasNoContent())
-                    {
-                        Changes.Add(
-                            $"{element.Name.LocalName}: removing all empty content from {originalCaseIncludeValue}");
                         element.MakeEmpty();
-                    }
-
-                    if (string.IsNullOrWhiteSpace(originalCaseIncludeValue)) return;
 
                     FixCopyIssue(element.Element(Constants.CopyToOutputDirectoryElement), Changes);
 
                     // if file contains EmbeddedResource or Content nodes, these nodes should be listed in None item groups as well
                     // creates this group automatically
                     if (element.Name.LocalName.Equals(Constants.EmbeddedResourceNode) || element.Name.LocalName.Equals(Constants.ContentNode))
-                        InsertIntoNoneRemoveElements(noneRemoveElements, element.AttributeValueByName(Constants.IncludeAttribute));
+                        InsertIntoNoneRemoveElements(noneRemoveElements, element.AttributeValueByName(element.GetAttributeName()));
                 });
 
             var itemsForProcessing = new List<ItemGroupEntity>();
 
             if (!noneRemoveElements.HasNoContent()) 
                 itemsForProcessing.Add(new ItemGroupEntity { LocalName = Constants.NoneNode, Element = noneRemoveElements.Elements().ToList() });
+
+            List<XElement> itemGroupsWithAttributeValue = new List<XElement>();
+            ItemGroupElements.ForEach(x =>
+            {
+                if (!x.HasAttributes)
+                    return;
+                
+                itemsForProcessing.Add(new ItemGroupEntity 
+                { 
+                    LocalName = x.Elements().First().Name.LocalName, 
+                    LocalAttributeName = x.FirstAttribute.Name.LocalName, 
+                    LocalAttributeValue = x.FirstAttribute.Value,
+                    Element = x.Elements().ToList() 
+                });
+                itemGroupsWithAttributeValue.Add(x);
+            });
+
+            if (itemGroupsWithAttributeValue.Any())
+                itemGroupsWithAttributeValue.ForEach(x => ItemGroupElements.Remove(x));
 
             itemsForProcessing.AddRange(ItemGroupElements
                 .SelectMany(x => x.Elements())
@@ -133,13 +142,17 @@ namespace FixProjects.Implementation
                 .Select(x => new ItemGroupEntity { LocalName = x.Key.Name.LocalName, Element = new List<XElement>(x) })
                 .ToList());
 
-            return itemsForProcessing;
+            return itemsForProcessing.OrderBy(x => x.LocalName).ToList();
         }
 
         /// <inheritdoc />
         public void MergeAndSortItemGroups(ItemGroupEntity entity, bool sort)
         {
-            MergeAndSortItemGroups(new XElement(Constants.ItemGroupNode), entity, sort);
+            var element = new XElement(Constants.ItemGroupNode);
+            if (!string.IsNullOrWhiteSpace(entity.LocalAttributeName))
+                element.Add(new XAttribute(entity.LocalAttributeName, entity.LocalAttributeValue));
+
+            MergeAndSortItemGroups(element, entity, sort);
         }
 
         private void InsertIntoNoneRemoveElements(XElement noneRemoveElement, string attributeValue)
@@ -152,6 +165,8 @@ namespace FixProjects.Implementation
                 new XElement(
                     Constants.NoneNode,
                     new XAttribute(Constants.RemoveAttribute, attributeValue)));
+
+            Changes.Add($"Create new none node with Remove attribute name and attribute value {attributeValue}");
         }
     }
 }

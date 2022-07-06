@@ -21,7 +21,7 @@ namespace FixProjects.Implementation
         }
 
         public CommandLineOptions CommandLineOptions { get; set; }
-
+        
         /// <inheritdoc />
         public int Run()
         {
@@ -64,9 +64,10 @@ namespace FixProjects.Implementation
                     });
 
                 if (!AreEqual(originalContent, templateInstance.ModifiedDocument))
+                {
+                    Console.WriteLine("  {0} CHANGES\n", templateInstance.Changes.Count);
                     _listOfChangedFiles.Add(file, templateInstance.ModifiedDocument);
-
-                Console.WriteLine("  {0} CHANGES\n", templateInstance.Changes.Count);
+                }
             }
 
             SaveChanges();
