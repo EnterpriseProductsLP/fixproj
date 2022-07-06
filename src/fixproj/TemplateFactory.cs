@@ -7,8 +7,6 @@ namespace FixProjects
 {
     internal class TemplateFactory
     {
-        private readonly string _projectTypeValue = "Microsoft.NET.Sdk";
-
         /// <summary>
         ///     Creates instance of IOperateOnProjectFiles implementation.
         /// </summary>
@@ -22,9 +20,9 @@ namespace FixProjects
 
             if (document.Root == null) throw new InvalidOperationException("Document is not valid");
 
-            var projectType = document.Root.Attribute("Sdk")?.Value;
+            var sdkProjectType = document.Root.Attribute("Sdk")?.Value;
 
-            if (!string.IsNullOrWhiteSpace(projectType) && projectType.StartsWith(_projectTypeValue))
+            if (!string.IsNullOrWhiteSpace(sdkProjectType) && sdkProjectType.StartsWith("Microsoft.NET.Sdk"))
                 return new DotNetSdkTemplate(file);
 
             return new DotNetFrameworkTemplate(file);
