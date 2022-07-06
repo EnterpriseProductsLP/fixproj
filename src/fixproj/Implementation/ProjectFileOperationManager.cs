@@ -46,7 +46,7 @@ namespace FixProjects.Implementation
 
                 Console.WriteLine($"Processing: {file}");
 
-                itemGroupEntities = templateInstance.FixContent();
+                if (CommandLineOptions.FixContent) itemGroupEntities = templateInstance.FixContent();
 
                 if (CommandLineOptions.Sort) templateInstance.SortPropertyGroups();
 
@@ -65,7 +65,7 @@ namespace FixProjects.Implementation
 
                 if (!AreEqual(originalContent, templateInstance.ModifiedDocument))
                 {
-                    Console.WriteLine($"CONTAINS CHANGES \n");
+                    Console.WriteLine("  {0} CHANGES\n", templateInstance.Changes.Count);
                     _listOfChangedFiles.Add(file, templateInstance.ModifiedDocument);
                 }
             }
